@@ -1,3 +1,0 @@
-13674 INFO  c.d.driver.core.GuavaCompatibility: Detected Guava >= 19 in the classpath, using modern compatibility layer
-22950 INFO  c.datastax.driver.core.ClockFactory: Using native clock to generate timestamps.
-33514 INFO  com.datastax.driver.core.NettyUtil: Found Netty's native epoll transport in the classpath, using it

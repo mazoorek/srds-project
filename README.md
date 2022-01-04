@@ -1,22 +1,36 @@
 # srds-project
-1) create cassandra cluster:
-kubectl apply -f srds-cassandra.yaml
+-------------------------------
+version with docker:
+1)
+create folders:
+data-node-<index> for nodes
+2)
+run docker commands:
+seed:
+docker run --name cassandra-node-<index> --network cassandra-network -v $(pwd)/data-<index>:/var/lib/cassandra -d  \
+-p (9042+index):9042 --rm cassandra:latest
+others nodes:
+docker run --name cassandra-node-<index> -d --network cassandra-network -e CASSANDRA_SEEDS=cassandra-node-<seed-index>  \
+-v $(pwd)/data-<index>:/var/lib/cassandra -d  -p (9042+index):9042 --rm cassandra:latest
 
-2) check cluster state:
-kubectl get statefulset srds-cassandra
-kubectl get pods -l="app=srds-cassandra"
-kubectl exec -it cassandra-0 -- nodetool status   
+3) install cqlsh:
+pip install cqlsh
    
-3)
-kubectl run -it cqlsh --image cassandra:3.11 -- /bin/bash
-cqlsh srds-cassandra-0.srds-cassandra
+4) import schema:
+cqlsh -f schema/schema.sql
+   
+5) verify cluster:
+docker exec -it cassandra-node-0 nodetool status
+   
+example with 3 nodes:
+seed:
+docker run --name cassandra-node-0 --network cassandra-network -v $(pwd)/data-0:/var/lib/cassandra -d  \
+-p 9042:9042 --rm cassandra:latest
+other nodes:
+docker run --name cassandra-node-1 -d --network cassandra-network -e CASSANDRA_SEEDS=cassandra-node-0  \
+-v $(pwd)/data-1:/var/lib/cassandra -d  -p 9043:9042 --rm cassandra:latest
 
-4)
-kubectl port-forward service/srds-cassandra 9042:9042
+docker run --name cassandra-node-2 -d --network cassandra-network -e CASSANDRA_SEEDS=cassandra-node-0  \
+-v $(pwd)/data-2:/var/lib/cassandra -d  -p 9044:9042 --rm cassandra:latest
 
-3) delete resources:
-grace=$(kubectl get pod srds-cassandra-0 -o=jsonpath='{.spec.terminationGracePeriodSeconds}') \
-&& kubectl delete statefulset -l app=srds-cassandra \
-&& echo "Sleeping ${grace} seconds" 1>&2 \
-&& sleep $grace \
-&& kubectl delete persistentvolumeclaim -l app=srds-cassandra
+
