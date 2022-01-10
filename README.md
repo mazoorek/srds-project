@@ -6,12 +6,14 @@ create folders:
 data-node-<index> for nodes
 2)
 run docker commands:
+docker create network cassandra-network
+
 seed:
-docker run --name cassandra-node-<index> --network cassandra-network -v $(pwd)/data-<index>:/var/lib/cassandra -d  \
+docker run --name cassandra-node-<index> --network cassandra-network -v $(pwd)/data-node-<index>:/var/lib/cassandra -d  \
 -p (9042+index):9042 --rm cassandra:latest
 others nodes:
 docker run --name cassandra-node-<index> -d --network cassandra-network -e CASSANDRA_SEEDS=cassandra-node-<seed-index>  \
--v $(pwd)/data-<index>:/var/lib/cassandra -d  -p (9042+index):9042 --rm cassandra:latest
+-v $(pwd)/data-node-<index>:/var/lib/cassandra -d  -p (9042+index):9042 --rm cassandra:latest
 
 3) install cqlsh:
 pip install cqlsh
