@@ -25,13 +25,38 @@ public class BackendSession {
 
 	private static final Logger logger = LoggerFactory.getLogger(BackendSession.class);
 
-	private Session session;
+	private Session session0;
+	private Session session1;
+	private Session session2;
+	private int sessionTurn = 0;
+
+	public Session session() {
+		System.out.println("Session turn: " + sessionTurn);
+		switch (sessionTurn) {
+			case 0:
+				sessionTurn = (sessionTurn + 1) % 3;
+				return session0;
+			case 1:
+				sessionTurn = (sessionTurn + 1) % 3;
+				return session1;
+			case 2:
+				sessionTurn = (sessionTurn + 1) % 3;
+				return session2;
+			default:
+				return session0;
+		}
+	}
 
 	public BackendSession(String contactPoint, String keyspace) throws BackendException {
 
-		Cluster cluster = Cluster.builder().addContactPoint(contactPoint).build();
+		Cluster cluster0 = Cluster.builder().addContactPoint(contactPoint).withPort(9042).build();
+		Cluster cluster1 = Cluster.builder().addContactPoint(contactPoint).withPort(9043).build();
+		Cluster cluster2 = Cluster.builder().addContactPoint(contactPoint).withPort(9044).build();
+
 		try {
-			session = cluster.connect(keyspace);
+			session0 = cluster0.connect(keyspace);
+			session1 = cluster1.connect(keyspace);
+			session2 = cluster2.connect(keyspace);
 		} catch (Exception e) {
 			throw new BackendException("Could not connect to the cluster. " + e.getMessage() + ".", e);
 		}
@@ -48,10 +73,10 @@ public class BackendSession {
 
 	private void prepareStatements() throws BackendException {
 		try {
-			SELECT_ALL_FROM_USERS = session.prepare("SELECT * FROM users;");
-			INSERT_INTO_USERS = session
+			SELECT_ALL_FROM_USERS = session().prepare("SELECT * FROM users;");
+			INSERT_INTO_USERS = session()
 					.prepare("INSERT INTO users (companyName, name, phone, street) VALUES (?, ?, ?, ?);");
-			DELETE_ALL_FROM_USERS = session.prepare("TRUNCATE users;");
+			DELETE_ALL_FROM_USERS = session().prepare("TRUNCATE users;");
 		} catch (Exception e) {
 			throw new BackendException("Could not prepare statements. " + e.getMessage() + ".", e);
 		}
@@ -66,7 +91,7 @@ public class BackendSession {
 		ResultSet rs = null;
 
 		try {
-			rs = session.execute(bs);
+			rs = session().execute(bs);
 		} catch (Exception e) {
 			throw new BackendException("Could not perform a query. " + e.getMessage() + ".", e);
 		}
@@ -88,7 +113,7 @@ public class BackendSession {
 		bs.bind(companyName, name, phone, street);
 
 		try {
-			session.execute(bs);
+			session().execute(bs);
 		} catch (Exception e) {
 			throw new BackendException("Could not perform an upsert. " + e.getMessage() + ".", e);
 		}
@@ -100,7 +125,7 @@ public class BackendSession {
 		BoundStatement bs = new BoundStatement(DELETE_ALL_FROM_USERS);
 
 		try {
-			session.execute(bs);
+			session().execute(bs);
 		} catch (Exception e) {
 			throw new BackendException("Could not perform a delete operation. " + e.getMessage() + ".", e);
 		}
@@ -110,8 +135,8 @@ public class BackendSession {
 
 	protected void finalize() {
 		try {
-			if (session != null) {
-				session.getCluster().close();
+			if (session() != null) {
+				session().getCluster().close();
 			}
 		} catch (Exception e) {
 			logger.error("Could not close existing cluster", e);
