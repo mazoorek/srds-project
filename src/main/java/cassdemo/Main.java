@@ -14,6 +14,20 @@ public class Main {
 
 	private static final String PROPERTIES_FILENAME = "config.properties";
 
+	public static String generateRandomAlfabeticString() {
+		int leftLimit = 97; // letter 'a'
+		int rightLimit = 122; // letter 'z'
+		int targetStringLength = 10;
+		Random random = new Random();
+
+		String generatedString = random.ints(leftLimit, rightLimit + 1)
+				.limit(targetStringLength)
+				.collect(StringBuilder::new, StringBuilder::appendCodePoint, StringBuilder::append)
+				.toString();
+
+		return generatedString;
+	}
+
 	public static void main(String[] args) throws IOException, BackendException {
 		String contactPoint = null;
 		String keyspace = null;
@@ -31,13 +45,20 @@ public class Main {
 		BackendSession session = new BackendSession(contactPoint, keyspace);
 
 		for (int i=0; i < 50; i++) {
-			UUID uuid = UUID.randomUUID();
-
+			// Create new user
+			UUID userId = UUID.randomUUID();
 			String name = "Name" + i;
 			String surname = "Surname" + i;
-
 			int age = ThreadLocalRandom.current().nextInt(20, 30);
-			session.createNewUser(uuid, name, surname, age);
+			session.createNewUser(userId, name, surname, age);
+
+			// Create new post
+			session.createNewPost(UUID.randomUUID(), generateRandomAlfabeticString(), userId);
+
+			if(i == 49) {
+				String allPostsOutput = session.selectAllPosts();
+				System.out.println(allPostsOutput);
+			}
 		}
 
 //		session.upsertUser("PP", "Adam", 609, "A St");

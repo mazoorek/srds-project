@@ -22,9 +22,9 @@ CREATE TABLE Users (
 );
 
 CREATE TABLE Posts (
-  postId int,
+  postId uuid,
   content varchar,
-  authorId int,
+  authorId uuid,
   PRIMARY KEY ((authorId), postId)
 );
 

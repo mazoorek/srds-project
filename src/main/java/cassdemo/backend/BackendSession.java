@@ -46,8 +46,10 @@ public class BackendSession {
 	private static PreparedStatement INSERT_INTO_USERS;
 	private static PreparedStatement DELETE_ALL_FROM_USERS;
 	private static PreparedStatement CREATE_NEW_USER;
+	private static PreparedStatement CREATE_NEW_POST;
+	private static PreparedStatement SELECT_ALL_POSTS;
 
-	private static final String USER_FORMAT = "- %-10s  %-16s %-10s %-10s\n";
+	private static final String POST_FORMAT = "- %-10s  %-10s %-10s -\n";
 	// private static final SimpleDateFormat df = new
 	// SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
@@ -57,7 +59,9 @@ public class BackendSession {
 //			INSERT_INTO_USERS = session
 //					.prepare("INSERT INTO users (companyName, name, phone, street) VALUES (?, ?, ?, ?);");
 //			DELETE_ALL_FROM_USERS = session.prepare("TRUNCATE users;");
+			SELECT_ALL_POSTS = session.prepare("SELECT * from posts");
 			CREATE_NEW_USER = session.prepare("INSERT INTO users (userId, name, surname, age) VALUES (?, ?, ?, ?)");
+			CREATE_NEW_POST = session.prepare("INSERT INTO posts (postId, content, authorId) VALUES (?, ?, ?)");
 		} catch (Exception e) {
 			throw new BackendException("Could not prepare statements. " + e.getMessage() + ".", e);
 		}
@@ -65,29 +69,6 @@ public class BackendSession {
 		logger.info("Statements prepared");
 	}
 
-	public String selectAll() throws BackendException {
-		StringBuilder builder = new StringBuilder();
-		BoundStatement bs = new BoundStatement(SELECT_ALL_FROM_USERS);
-
-		ResultSet rs = null;
-
-		try {
-			rs = session.execute(bs);
-		} catch (Exception e) {
-			throw new BackendException("Could not perform a query. " + e.getMessage() + ".", e);
-		}
-
-		for (Row row : rs) {
-			String rcompanyName = row.getString("companyName");
-			String rname = row.getString("name");
-			int rphone = row.getInt("phone");
-			String rstreet = row.getString("street");
-
-			builder.append(String.format(USER_FORMAT, rcompanyName, rname, rphone, rstreet));
-		}
-
-		return builder.toString();
-	}
 
 	public void upsertUser(String companyName, String name, int phone, String street) throws BackendException {
 		BoundStatement bs = new BoundStatement(INSERT_INTO_USERS);
@@ -114,6 +95,29 @@ public class BackendSession {
 		logger.info("All users deleted");
 	}
 
+	public String selectAllPosts() throws BackendException {
+		StringBuilder builder = new StringBuilder();
+		BoundStatement bs = new BoundStatement(SELECT_ALL_POSTS);
+
+		ResultSet rs = null;
+
+		try {
+			rs = session.execute(bs);
+		} catch (Exception e) {
+			throw new BackendException("Could not perform a query: select all posts. " + e.getMessage() + ".", e);
+		}
+
+		for (Row row : rs) {
+			UUID postId = row.getUUID("postId");
+			String content = row.getString("content");
+			UUID authorId = row.getUUID("authorId");
+
+			builder.append(String.format(POST_FORMAT, postId, content, authorId));
+		}
+
+		return builder.toString();
+	}
+
 	public void createNewUser(UUID userId, String name, String surname, int age) throws BackendException {
 		BoundStatement bs = new BoundStatement(CREATE_NEW_USER);
 		bs.bind(userId, name, surname, age);
@@ -123,6 +127,17 @@ public class BackendSession {
 			throw new BackendException("Could not perform insert new user operation. " + e.getMessage() + ".", e);
 		}
 		logger.info("New user created");
+	}
+
+	public void createNewPost(UUID postId, String content, UUID authorId) throws BackendException {
+		BoundStatement bs = new BoundStatement(CREATE_NEW_POST);
+		bs.bind(postId, content, authorId);
+		try {
+			session.execute(bs);
+		} catch (Exception e) {
+			throw new BackendException("Could not perform insert new post operation. " + e.getMessage() + ".", e);
+		}
+		logger.info("New post created");
 	}
 
 	protected void finalize() {
