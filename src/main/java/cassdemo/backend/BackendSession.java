@@ -7,6 +7,7 @@ import org.slf4j.LoggerFactory;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 /*
  * For error handling done right see: 
@@ -44,6 +45,7 @@ public class BackendSession {
 	private static PreparedStatement SELECT_ALL_FROM_USERS;
 	private static PreparedStatement INSERT_INTO_USERS;
 	private static PreparedStatement DELETE_ALL_FROM_USERS;
+	private static PreparedStatement CREATE_NEW_USER;
 
 	private static final String USER_FORMAT = "- %-10s  %-16s %-10s %-10s\n";
 	// private static final SimpleDateFormat df = new
@@ -51,10 +53,11 @@ public class BackendSession {
 
 	private void prepareStatements() throws BackendException {
 		try {
-			SELECT_ALL_FROM_USERS = session.prepare("SELECT * FROM users;");
-			INSERT_INTO_USERS = session
-					.prepare("INSERT INTO users (companyName, name, phone, street) VALUES (?, ?, ?, ?);");
-			DELETE_ALL_FROM_USERS = session.prepare("TRUNCATE users;");
+//			SELECT_ALL_FROM_USERS = session.prepare("SELECT * FROM users;");
+//			INSERT_INTO_USERS = session
+//					.prepare("INSERT INTO users (companyName, name, phone, street) VALUES (?, ?, ?, ?);");
+//			DELETE_ALL_FROM_USERS = session.prepare("TRUNCATE users;");
+			CREATE_NEW_USER = session.prepare("INSERT INTO users (userId, name, surname, age) VALUES (?, ?, ?, ?)");
 		} catch (Exception e) {
 			throw new BackendException("Could not prepare statements. " + e.getMessage() + ".", e);
 		}
@@ -109,6 +112,17 @@ public class BackendSession {
 		}
 
 		logger.info("All users deleted");
+	}
+
+	public void createNewUser(UUID userId, String name, String surname, int age) throws BackendException {
+		BoundStatement bs = new BoundStatement(CREATE_NEW_USER);
+		bs.bind(userId, name, surname, age);
+		try {
+			session.execute(bs);
+		} catch (Exception e) {
+			throw new BackendException("Could not perform insert new user operation. " + e.getMessage() + ".", e);
+		}
+		logger.info("New user created");
 	}
 
 	protected void finalize() {

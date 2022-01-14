@@ -13,17 +13,11 @@ CREATE TABLE Comments (
   PRIMARY KEY ((postId), authorId, commentId)
 );
 
-CREATE TABLE CommentLikes (
-  postId int,
-  authorId int,
-  commentId int,
-  commentLikesCounter counter,
-  PRIMARY KEY ((postId, authorId, commentId))
-);
-
 CREATE TABLE Users (
-  userId int,
+  userId uuid,
   name varchar,
+  surname varchar,
+  age int,
   PRIMARY KEY(userId)
 );
 
@@ -53,14 +47,6 @@ CREATE TABLE LikedPostByUser (
   postId int,
   userId int,
   PRIMARY KEY ((authorId, postId, userId))
-);
-
-CREATE TABLE LikedCommentByUser (
-  postId int,
-  authorId int,
-  commentId int,
-  userId int,
-  PRIMARY KEY ((postId, authorId, commentId, userId))
 );
 
 
