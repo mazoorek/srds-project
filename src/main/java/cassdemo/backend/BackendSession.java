@@ -41,13 +41,11 @@ public class BackendSession {
 		}
 		prepareStatements();
 	}
-
-	private static PreparedStatement SELECT_ALL_FROM_USERS;
-	private static PreparedStatement INSERT_INTO_USERS;
-	private static PreparedStatement DELETE_ALL_FROM_USERS;
+	
 	private static PreparedStatement CREATE_NEW_USER;
 	private static PreparedStatement CREATE_NEW_POST;
 	private static PreparedStatement SELECT_ALL_POSTS;
+	private static PreparedStatement DELETE_POST;
 
 	private static final String POST_FORMAT = "- %-10s  %-10s %-10s -\n";
 	// private static final SimpleDateFormat df = new
@@ -55,13 +53,10 @@ public class BackendSession {
 
 	private void prepareStatements() throws BackendException {
 		try {
-//			SELECT_ALL_FROM_USERS = session.prepare("SELECT * FROM users;");
-//			INSERT_INTO_USERS = session
-//					.prepare("INSERT INTO users (companyName, name, phone, street) VALUES (?, ?, ?, ?);");
-//			DELETE_ALL_FROM_USERS = session.prepare("TRUNCATE users;");
 			SELECT_ALL_POSTS = session.prepare("SELECT * from posts");
 			CREATE_NEW_USER = session.prepare("INSERT INTO users (userId, name, surname, age) VALUES (?, ?, ?, ?)");
 			CREATE_NEW_POST = session.prepare("INSERT INTO posts (postId, content, authorId) VALUES (?, ?, ?)");
+			DELETE_POST = session.prepare("DELETE FROM POSTS where postId = (?) and authorId = (?)");
 		} catch (Exception e) {
 			throw new BackendException("Could not prepare statements. " + e.getMessage() + ".", e);
 		}
@@ -69,31 +64,6 @@ public class BackendSession {
 		logger.info("Statements prepared");
 	}
 
-
-	public void upsertUser(String companyName, String name, int phone, String street) throws BackendException {
-		BoundStatement bs = new BoundStatement(INSERT_INTO_USERS);
-		bs.bind(companyName, name, phone, street);
-
-		try {
-			session.execute(bs);
-		} catch (Exception e) {
-			throw new BackendException("Could not perform an upsert. " + e.getMessage() + ".", e);
-		}
-
-		logger.info("User " + name + " upserted");
-	}
-
-	public void deleteAll() throws BackendException {
-		BoundStatement bs = new BoundStatement(DELETE_ALL_FROM_USERS);
-
-		try {
-			session.execute(bs);
-		} catch (Exception e) {
-			throw new BackendException("Could not perform a delete operation. " + e.getMessage() + ".", e);
-		}
-
-		logger.info("All users deleted");
-	}
 
 	public String selectAllPosts() throws BackendException {
 		StringBuilder builder = new StringBuilder();
@@ -116,6 +86,17 @@ public class BackendSession {
 		}
 
 		return builder.toString();
+	}
+
+	public void deletePost(UUID postId, UUID authorId) throws BackendException {
+		BoundStatement bs = new BoundStatement(DELETE_POST);
+		bs.bind(postId, authorId);
+		try {
+			session.execute(bs);
+		} catch (Exception e) {
+			throw new BackendException("Could not perform delete post operation. " + e.getMessage() + ".", e);
+		}
+		logger.info("Post with postId = " + postId + " and authorId = " + authorId + " deleted");
 	}
 
 	public void createNewUser(UUID userId, String name, String surname, int age) throws BackendException {

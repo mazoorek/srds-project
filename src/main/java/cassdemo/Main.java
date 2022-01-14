@@ -53,7 +53,11 @@ public class Main {
 			session.createNewUser(userId, name, surname, age);
 
 			// Create new post
-			session.createNewPost(UUID.randomUUID(), generateRandomAlfabeticString(), userId);
+			UUID postId = UUID.randomUUID();
+			session.createNewPost(postId, generateRandomAlfabeticString(), userId);
+
+			//Delete post
+			session.deletePost(postId, userId);
 
 			if(i == 49) {
 				String allPostsOutput = session.selectAllPosts();
