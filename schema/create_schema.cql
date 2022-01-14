@@ -20,7 +20,7 @@ CREATE TABLE MeteoData (
   temperature double,
   pressure double,
   PRIMARY KEY (stationName, measurement)
-);
+);x
 
 CREATE TABLE MeteoData2 (
   stationName varchar, 
