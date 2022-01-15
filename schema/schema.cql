@@ -6,11 +6,11 @@ CREATE KEYSPACE IF NOT EXISTS Blog
 USE Blog;
 
 CREATE TABLE Comments_By_Post (
-  postId int,
-  authorId int,
+  postId uuid,
+  authorId uuid,
   authorName varchar,
   createdAt timestamp,
-  commentId int,
+  commentId uuid,
   content varchar,
   PRIMARY KEY ((postId), createdAt, commentId)
   WITH CLUSTERING ORDER BY (createdAt DESC)
@@ -26,10 +26,10 @@ CREATE TABLE Users (
 );
 
 CREATE TABLE Comments_by_author (
-  postId int,
-  authorId int,
+  postId uuid,
+  authorId uuid,
   createdAt timestamp,
-  commentId int,
+  commentId uuid,
   content varchar,
   PRIMARY KEY ((authorId), createdAt, commentId)
   WITH CLUSTERING ORDER BY (createdAt DESC)
@@ -63,8 +63,8 @@ CREATE TABLE PostLikes (
 );
 
 CREATE TABLE LikedPostByUser (
-  postId int,
-  userId int,
+  postId uuid,
+  userId uuid,
   PRIMARY KEY ((userId), postId)
 );
 
