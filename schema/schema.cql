@@ -13,8 +13,8 @@ CREATE TABLE Comments_By_Post (
   commentId uuid,
   content varchar,
   PRIMARY KEY ((postId), createdAt, commentId)
-  WITH CLUSTERING ORDER BY (createdAt DESC)
-);
+)
+  WITH CLUSTERING ORDER BY (createdAt DESC);
 
 CREATE TABLE Users (
   userId uuid,
@@ -32,8 +32,8 @@ CREATE TABLE Comments_by_author (
   commentId uuid,
   content varchar,
   PRIMARY KEY ((authorId), createdAt, commentId)
-  WITH CLUSTERING ORDER BY (createdAt DESC)
-);
+)
+  WITH CLUSTERING ORDER BY (createdAt DESC);
 
 CREATE TABLE Posts_by_author (
   postId uuid,
@@ -42,8 +42,8 @@ CREATE TABLE Posts_by_author (
   authorId uuid,
   name varchar,
   PRIMARY KEY ((authorId), createdAt, postId)
-  WITH CLUSTERING ORDER BY (createdAt DESC)
-);
+)
+  WITH CLUSTERING ORDER BY (createdAt DESC);
 
 CREATE TABLE Posts_by_category (
   categoryName varchar,
@@ -53,8 +53,8 @@ CREATE TABLE Posts_by_category (
   authorId uuid,
   authorName varchar,
   PRIMARY KEY ((categoryName), createdAt, postId)
-  WITH CLUSTERING ORDER BY (createdAt DESC)
-);
+)
+  WITH CLUSTERING ORDER BY (createdAt DESC);
 
 CREATE TABLE PostLikes (
   postId uuid,

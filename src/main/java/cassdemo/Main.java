@@ -48,21 +48,22 @@ public class Main {
 			// Create new user
 			UUID userId = UUID.randomUUID();
 			String name = "Name" + i;
-			String surname = "Surname" + i;
+			String password = "Password" + i;
+			String email = "email" + i;
 			int age = ThreadLocalRandom.current().nextInt(20, 30);
-			session.createNewUser(userId, name, surname, age);
+			session.createNewUser(userId, name, password, email, age);
 
-			// Create new post
-			UUID postId = UUID.randomUUID();
-			session.createNewPost(postId, generateRandomAlfabeticString(), userId);
-
-			//Delete post
-			session.deletePost(postId, userId);
-
-			if(i == 49) {
-				String allPostsOutput = session.selectAllPosts();
-				System.out.println(allPostsOutput);
-			}
+//			// Create new post
+//			UUID postId = UUID.randomUUID();
+//			session.createNewPost(postId, generateRandomAlfabeticString(), userId);
+//
+//			//Delete post
+//			session.deletePost(postId, userId);
+//
+//			if(i == 49) {
+//				String allPostsOutput = session.selectAllPosts();
+//				System.out.println(allPostsOutput);
+//			}
 		}
 
 //		session.upsertUser("PP", "Adam", 609, "A St");

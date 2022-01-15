@@ -54,7 +54,7 @@ public class BackendSession {
 	private void prepareStatements() throws BackendException {
 		try {
 			SELECT_ALL_POSTS = session.prepare("SELECT * from posts");
-			CREATE_NEW_USER = session.prepare("INSERT INTO users (userId, name, surname, age) VALUES (?, ?, ?, ?)");
+			CREATE_NEW_USER = session.prepare("INSERT INTO users (userId, name, password, email, age) VALUES (?, ?, ?, ?, ?)");
 			CREATE_NEW_POST = session.prepare("INSERT INTO posts (postId, content, authorId) VALUES (?, ?, ?)");
 			DELETE_POST = session.prepare("DELETE FROM POSTS where postId = (?) and authorId = (?)");
 		} catch (Exception e) {
@@ -99,9 +99,9 @@ public class BackendSession {
 		logger.info("Post with postId = " + postId + " and authorId = " + authorId + " deleted");
 	}
 
-	public void createNewUser(UUID userId, String name, String surname, int age) throws BackendException {
+	public void createNewUser(UUID userId, String name, String password, String email, int age) throws BackendException {
 		BoundStatement bs = new BoundStatement(CREATE_NEW_USER);
-		bs.bind(userId, name, surname, age);
+		bs.bind(userId, name, password, email, age);
 		try {
 			session.execute(bs);
 		} catch (Exception e) {
