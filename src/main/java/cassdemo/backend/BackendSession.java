@@ -41,7 +41,7 @@ public class BackendSession {
 		}
 		prepareStatements();
 	}
-	
+
 	private static PreparedStatement CREATE_NEW_USER;
 	private static PreparedStatement CREATE_NEW_POST;
 	private static PreparedStatement SELECT_ALL_POSTS;
