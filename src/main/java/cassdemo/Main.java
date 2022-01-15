@@ -2,6 +2,10 @@ package cassdemo;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.sql.Timestamp;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.Date;
 import java.util.Properties;
 import java.util.Random;
 import java.util.UUID;
@@ -44,7 +48,7 @@ public class Main {
 			
 		BackendSession session = new BackendSession(contactPoint, keyspace);
 
-		for (int i=0; i < 50; i++) {
+		for (int i=0; i < 1; i++) {
 			// Create new user
 			UUID userId = UUID.randomUUID();
 			String name = "Name" + i;
@@ -53,17 +57,48 @@ public class Main {
 			int age = ThreadLocalRandom.current().nextInt(20, 30);
 			session.createNewUser(userId, name, password, email, age);
 
-//			// Create new post
-//			UUID postId = UUID.randomUUID();
-//			session.createNewPost(postId, generateRandomAlfabeticString(), userId);
-//
+
+
+			// Create new post
+			UUID postId = UUID.randomUUID();
+			String categoryName = "category1";
+			String postContent = "abc" + i;
+//			LocalDateTime ldt = LocalDate.now();
+			Timestamp timestamp = new Timestamp(System.currentTimeMillis());
+			session.createNewPost(postId, userId, postContent, timestamp, name, categoryName);
+
+			System.out.println("BEFORE DELETE: ");
+
+			System.out.println("---------- po authorze ----------");
+			String postOutputAuthor1 = session.selectConcretePostByAuthor(userId, timestamp, postId);
+			System.out.println(postOutputAuthor1);
+			System.out.println("---------- po category ----------");
+			String postOutputCategory1 = session.selectConcretePostByCategory(categoryName, timestamp, postId);
+			System.out.println(postOutputCategory1);
+
+			String newPostContent = "Nowy content";
+
+
+			session.editPost(postId, userId, newPostContent, timestamp, categoryName);
+			System.out.println("AFTER EDIT: ");
+
+			System.out.println("---------- po authorze ----------");
+			String postOutputAuthor2 = session.selectConcretePostByAuthor(userId, timestamp, postId);
+			System.out.println(postOutputAuthor2);
+			System.out.println("---------- po category ----------");
+			String postOutputCategory2 = session.selectConcretePostByCategory(categoryName, timestamp, postId);
+			System.out.println(postOutputCategory2);
+
 //			//Delete post
 //			session.deletePost(postId, userId);
 //
-//			if(i == 49) {
-//				String allPostsOutput = session.selectAllPosts();
-//				System.out.println(allPostsOutput);
-//			}
+			if(i == 49) {
+				String allPostsOutput = session.selectAllPostsByAuthor(userId);
+				System.out.println(allPostsOutput);
+				System.out.println("----------------");
+				String allNewestPosts = session.selectNewestPostsByAuthor(userId);
+				System.out.println(allNewestPosts);
+			}
 		}
 
 //		session.upsertUser("PP", "Adam", 609, "A St");
