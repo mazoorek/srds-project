@@ -70,6 +70,9 @@ public class BackendSession {
 	private static PreparedStatement SELECT_COMMENTS_BY_POST;
 	private static PreparedStatement SELECT_COMMENTS_BY_AUTHOR;
 
+	private static PreparedStatement DELETE_COMMENT_BY_POST;
+	private static PreparedStatement DELETE_COMMENT_BY_AUTHOR;
+
 	private static final String POST_BY_CATEGORY_FORMAT = "- %-10s %-10s %-10s %-10s %-10s %-10s-\n";
 	private static final String POST_BY_AUTHOR_FORMAT = "- %-10s %-10s %-10s %-10s %-10s -\n";
 	private static final String COMMENTS_BY_POST_FORMAT = "- %-10s %-10s %-10s %-10s %-10s %-10s -\n";
@@ -101,6 +104,9 @@ public class BackendSession {
 
 			SELECT_COMMENTS_BY_POST = session.prepare("SELECT * from comments_by_post where postId = (?)");
 			SELECT_COMMENTS_BY_AUTHOR = session.prepare("SELECT * from comments_by_author where authorId = (?)");
+
+			DELETE_COMMENT_BY_POST = session.prepare("DELETE FROM comments_by_post where postId = (?) and createdAt = (?) and commentId = (?)");
+			DELETE_COMMENT_BY_AUTHOR = session.prepare("DELETE FROM comments_by_author where authorId = (?) and createdAt = (?) and commentId = (?)");
 
 
 
@@ -332,6 +338,22 @@ public class BackendSession {
 		showCommentsByAuthor(rs, builder);
 
 		return builder.toString();
+	}
+
+	public void deleteComment(UUID postId, Timestamp createdAt, UUID commentId, UUID authorId) throws BackendException {
+		BoundStatement deleteCommentByPost = new BoundStatement(DELETE_COMMENT_BY_POST);
+		BoundStatement deleteCommentByAuthor = new BoundStatement(DELETE_COMMENT_BY_AUTHOR);
+
+		deleteCommentByPost.bind(postId, createdAt, commentId);
+		deleteCommentByAuthor.bind(authorId, createdAt, commentId);
+
+		try {
+			session.execute(deleteCommentByPost);
+			session.execute(deleteCommentByAuthor);
+		} catch (Exception e) {
+			throw new BackendException("Could not perform delete comment operation. " + e.getMessage() + ".", e);
+		}
+		logger.info("Comment with commentId = " + commentId + " and authorId = " + authorId + " and postId = " + postId + " deleted");
 	}
 
 	private void showPostsByCategory(ResultSet rs, StringBuilder builder) {
