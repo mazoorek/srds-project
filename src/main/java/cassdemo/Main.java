@@ -5,10 +5,7 @@ import java.nio.charset.Charset;
 import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.Date;
-import java.util.Properties;
-import java.util.Random;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 
 import cassdemo.backend.BackendException;
@@ -73,34 +70,49 @@ public class Main {
 			String postOutputCategory1 = session.selectConcretePostByCategory(categoryName, timestamp, postId);
 			System.out.println(postOutputCategory1);
 
-			UUID commentId = UUID.randomUUID();
-			String commentContent = "Komentarz";
+			System.out.println("Liked post by user before create liked");
+			List<UUID> likedPost = session.getLikedPostsByUser(userId);
+			likedPost.forEach(System.out::println);
+			System.out.println("--------------");
 
+			session.createLikedPostByUser(postId, userId);
 
-			session.createNewComment(postId, userId, name, timestamp, commentId, commentContent);
+			System.out.println("Liked post by user after create liked");
+			likedPost = session.getLikedPostsByUser(userId);
+			likedPost.forEach(System.out::println);
 
-			System.out.println("BEFORE COMMENT UPDATE: ");
+			System.out.println("Delete like");
+			session.deleteLikedPostByUser(postId, userId);
+			System.out.println("-------------------------");
 
-			System.out.println("---------- by POST ID ----------");
-			String commentByPostOutput = session.selectCommentsByPost(postId);
-			System.out.println(commentByPostOutput);
-			System.out.println("---------- po AUTHOR ID ----------");
-			String commentByAuthorOutput = session.selectCommentsByAuthor(userId);
-			System.out.println(commentByAuthorOutput);
+			System.out.println("Liked post by user after delete liked");
+			likedPost = session.getLikedPostsByUser(userId);
+			likedPost.forEach(System.out::println);
 
-			//Edit comment
-			String newCommentContent = "bla bla nowy comment content";
-			session.editComment(postId, timestamp, commentId, userId, newCommentContent);
+			System.out.println("DISPLAY POST LIKES");
+			String postLikes = session.selectPostLikes(postId);
+			System.out.println(postLikes);
 
-			System.out.println("AFTER COMMENT UPDATE: ");
+			System.out.println("INCREMENT POST LIKES");
+			session.incrementPostLikes(postId);
 
-			System.out.println("---------- by POST ID ----------");
-			String commentByPostOutput2 = session.selectCommentsByPost(postId);
-			System.out.println(commentByPostOutput2);
-			System.out.println("---------- po AUTHOR ID ----------");
-			String commentByAuthorOutput2 = session.selectCommentsByAuthor(userId);
-			System.out.println(commentByAuthorOutput2);
+			System.out.println("DISPLAY AFTER INCREMENT");
+			String postLikes2 = session.selectPostLikes(postId);
+			System.out.println(postLikes2);
 
+			System.out.println("DECREMENT POST LIKES");
+			session.decrementPostLikes(postId);
+
+			System.out.println("DISPLAY AFTER DECREMENT");
+			String postLikes3 = session.selectPostLikes(postId);
+			System.out.println(postLikes3);
+
+			System.out.println("DELETE POST LIKES");
+			session.deletePostLikes(postId);
+
+			System.out.println("POST LIKES AFTER DELETE");
+			String postLikes4 = session.selectPostLikes(postId);
+			System.out.println(postLikes4);
 
 //
 			if(i == 49) {

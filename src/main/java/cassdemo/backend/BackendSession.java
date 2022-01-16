@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 /*
  * For error handling done right see:
@@ -48,38 +49,43 @@ public class BackendSession {
 
 	private static PreparedStatement CREATE_NEW_POST_AUTHOR;
 	private static PreparedStatement CREATE_NEW_POST_CATEGORY;
-
 	private static PreparedStatement SELECT_ALL_POSTS_BY_CATEGORY;
 	private static PreparedStatement SELECT_NEWEST_POSTS_BY_CATEGORY;
-
 	private static PreparedStatement SELECT_ALL_POSTS_BY_AUTHOR;
 	private static PreparedStatement SELECT_NEWEST_POSTS_BY_AUTHOR;
-
 	private static PreparedStatement DELETE_POST_BY_AUTHOR;
 	private static PreparedStatement DELETE_POST_BY_CATEGORY;
-
 	private static PreparedStatement SELECT_CONCRETE_POST_BY_CATEGORY;
 	private static PreparedStatement SELECT_CONCRETE_POST_BY_AUTHOR;
-
 	private static PreparedStatement EDIT_CONCRETE_POST_BY_CATEGORY;
 	private static PreparedStatement EDIT_CONCRETE_POST_BY_AUTHOR;
 
 	private static PreparedStatement CREATE_NEW_COMMENT_BY_POST;
 	private static PreparedStatement CREATE_NEW_COMMENT_BY_AUTHOR;
-
 	private static PreparedStatement SELECT_COMMENTS_BY_POST;
 	private static PreparedStatement SELECT_COMMENTS_BY_AUTHOR;
-
 	private static PreparedStatement DELETE_COMMENT_BY_POST;
 	private static PreparedStatement DELETE_COMMENT_BY_AUTHOR;
-
 	private static PreparedStatement UPDATE_COMMENT_BY_POST;
 	private static PreparedStatement UPDATE_COMMENT_BY_AUTHOR;
+
+	private static PreparedStatement SELECT_POSTS_LIKED_BY_USER;
+	private static PreparedStatement CREATE_LIKED_POST_BY_USER;
+	private static PreparedStatement DELETE_LIKED_POST_BY_USER;
+
+	private static PreparedStatement SELECT_POST_LIKES;
+
+	private static PreparedStatement INCREMENT_POST_LIKE;
+	private static PreparedStatement DECREMENT_POST_LIKE;
+
+	private static PreparedStatement DELETE_POST_LIKES;
+
 
 	private static final String POST_BY_CATEGORY_FORMAT = "- %-10s %-10s %-10s %-10s %-10s %-10s-\n";
 	private static final String POST_BY_AUTHOR_FORMAT = "- %-10s %-10s %-10s %-10s %-10s -\n";
 	private static final String COMMENTS_BY_POST_FORMAT = "- %-10s %-10s %-10s %-10s %-10s %-10s -\n";
 	private static final String COMMENTS_BY_AUTHOR_FORMAT = "- %-10s %-10s %-10s %-10s %-10s -\n";
+	private static final String POST_LIKES_FORMAT = "- %-10s %-10s -\n";
 	// private static final SimpleDateFormat df = new
 	// SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
@@ -114,6 +120,14 @@ public class BackendSession {
 			UPDATE_COMMENT_BY_POST = session.prepare("UPDATE comments_by_post set commentContent = (?) where postId = (?) and createdAt = (?) and commentId = (?)");
 			UPDATE_COMMENT_BY_AUTHOR = session.prepare("UPDATE comments_by_author set commentContent = (?) where authorId = (?) and createdAt = (?) and commentId = (?)");
 
+			SELECT_POSTS_LIKED_BY_USER = session.prepare("SELECT * FROM liked_post_by_user where userId = (?)");
+			CREATE_LIKED_POST_BY_USER = session.prepare("INSERT INTO liked_post_by_user (postId, userId) VALUES (?, ?)");
+			DELETE_LIKED_POST_BY_USER = session.prepare("DELETE FROM liked_post_by_user where userId = (?) and postId = (?)");
+
+			SELECT_POST_LIKES = session.prepare("SELECT * from post_likes where postId = (?)");
+			INCREMENT_POST_LIKE = session.prepare("UPDATE post_likes SET postLikesCounter = postLikesCounter + 1 where postId = (?)");
+			DECREMENT_POST_LIKE = session.prepare("UPDATE post_likes SET postLikesCounter = postLikesCounter - 1 where postId = (?)");
+			DELETE_POST_LIKES = session.prepare("DELETE FROM post_likes where postId = (?)");
 
 		} catch (Exception e) {
 			throw new BackendException("Could not prepare statements. " + e.getMessage() + ".", e);
@@ -375,6 +389,113 @@ public class BackendSession {
 			throw new BackendException("Could not perform edit comment operation. " + e.getMessage() + ".", e);
 		}
 		logger.info("Comment edited");
+	}
+
+	public List<UUID> getLikedPostsByUser(UUID userId) throws BackendException {
+		StringBuilder builder = new StringBuilder();
+		BoundStatement bs = new BoundStatement(SELECT_POSTS_LIKED_BY_USER);
+		bs.bind(userId);
+
+		ResultSet rs = null;
+
+		try {
+			rs = session.execute(bs);
+		} catch (Exception e) {
+			throw new BackendException("Could not perform a query: select posts liked by user. " + e.getMessage() + ".", e);
+		}
+
+		return rs.all().stream().map(row -> row.getUUID("postId")).collect(Collectors.toList());
+	}
+
+	public void createLikedPostByUser(UUID postId, UUID userId) throws BackendException {
+		BoundStatement createLikedPostByUserStatement = new BoundStatement(CREATE_LIKED_POST_BY_USER);
+
+		createLikedPostByUserStatement.bind(postId, userId);
+
+		try {
+			session.execute(createLikedPostByUserStatement);
+		} catch (Exception e) {
+			throw new BackendException("Could not perform insert liked post by user operation. " + e.getMessage() + ".", e);
+		}
+		logger.info("New liked post by user created");
+	}
+
+	public void deleteLikedPostByUser(UUID postId, UUID userId) throws BackendException {
+		BoundStatement deleteLikedPostByUserStatement = new BoundStatement(DELETE_LIKED_POST_BY_USER);
+
+		deleteLikedPostByUserStatement.bind(userId, postId);
+
+		try {
+			session.execute(deleteLikedPostByUserStatement);
+		} catch (Exception e) {
+			throw new BackendException("Could not perform delete comment operation. " + e.getMessage() + ".", e);
+		}
+		logger.info("Liked post by user deleted");
+	}
+
+	public String selectPostLikes(UUID postId) throws BackendException {
+		StringBuilder builder = new StringBuilder();
+		BoundStatement bs = new BoundStatement(SELECT_POST_LIKES);
+		bs.bind(postId);
+
+		ResultSet rs = null;
+
+		try {
+			rs = session.execute(bs);
+		} catch (Exception e) {
+			throw new BackendException("Could not perform a query: select post likes " + e.getMessage() + ".", e);
+		}
+
+		showPostLikes(rs, builder);
+
+		return builder.toString();
+	}
+
+	public void incrementPostLikes(UUID postId) throws BackendException {
+		BoundStatement incrementPostLikesStatement = new BoundStatement(INCREMENT_POST_LIKE);
+
+		incrementPostLikesStatement.bind(postId);
+
+		try {
+			session.execute(incrementPostLikesStatement);
+		} catch (Exception e) {
+			throw new BackendException("Could not perform increment post likes operation. " + e.getMessage() + ".", e);
+		}
+		logger.info("Post liked");
+	}
+
+	public void decrementPostLikes(UUID postId) throws BackendException {
+		BoundStatement decrementPostLikesStatement = new BoundStatement(DECREMENT_POST_LIKE);
+
+		decrementPostLikesStatement.bind(postId);
+
+		try {
+			session.execute(decrementPostLikesStatement);
+		} catch (Exception e) {
+			throw new BackendException("Could not perform decrement post likes operation. " + e.getMessage() + ".", e);
+		}
+		logger.info("Remove post liked");
+	}
+
+	public void deletePostLikes(UUID postId) throws BackendException {
+		BoundStatement deletePostLikesStatement = new BoundStatement(DELETE_POST_LIKES);
+
+		deletePostLikesStatement.bind(postId);
+
+		try {
+			session.execute(deletePostLikesStatement);
+		} catch (Exception e) {
+			throw new BackendException("Could not perform delete post likes operation. " + e.getMessage() + ".", e);
+		}
+		logger.info("post likes deleted");
+	}
+
+	private void showPostLikes(ResultSet rs, StringBuilder builder) {
+		for (Row row : rs) {
+			UUID postId = row.getUUID("postId");
+			Long postLikesCounter = row.getLong("postLikesCounter");
+			builder.append(String.format(POST_LIKES_FORMAT, postId, postLikesCounter));
+		}
 	}
 
 	private void showPostsByCategory(ResultSet rs, StringBuilder builder) {

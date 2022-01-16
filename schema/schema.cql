@@ -56,13 +56,13 @@ CREATE TABLE Posts_by_category (
 )
   WITH CLUSTERING ORDER BY (createdAt DESC);
 
-CREATE TABLE PostLikes (
+CREATE TABLE Post_likes (
   postId uuid,
   postLikesCounter counter,
   PRIMARY KEY ((postId))
 );
 
-CREATE TABLE LikedPostByUser (
+CREATE TABLE Liked_post_by_user (
   postId uuid,
   userId uuid,
   PRIMARY KEY ((userId), postId)
