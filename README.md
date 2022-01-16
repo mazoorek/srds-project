@@ -19,7 +19,7 @@ docker run --name cassandra-node-<index> -d --network cassandra-network -e CASSA
 pip install cqlsh
    
 4) import schema:
-cqlsh -f schema/schema.sql
+cqlsh -f schema/schema.cql
    
 5) verify cluster:
 docker exec -it cassandra-node-0 nodetool status
