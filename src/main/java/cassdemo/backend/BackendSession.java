@@ -12,6 +12,9 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import static com.datastax.driver.core.ConsistencyLevel.ONE;
+import static com.datastax.driver.core.ConsistencyLevel.QUORUM;
+
 /*
  * For error handling done right see:
  * https://www.datastax.com/dev/blog/cassandra-error-handling-done-right
@@ -35,7 +38,12 @@ public class BackendSession {
 		contactPoints.add(new InetSocketAddress(contactPoint, 9042));
 		contactPoints.add(new InetSocketAddress(contactPoint, 9043));
 		contactPoints.add(new InetSocketAddress(contactPoint, 9044));
-		Cluster cluster = Cluster.builder().addContactPoint(contactPoint).addContactPointsWithPorts(contactPoints).build();
+		Cluster cluster = Cluster.builder()
+				.addContactPoint(contactPoint)
+				.addContactPointsWithPorts(contactPoints)
+				.withQueryOptions(new QueryOptions().
+						setConsistencyLevel(ONE))
+				.build();
 
 		try {
 			session = cluster.connect(keyspace);
@@ -51,7 +59,8 @@ public class BackendSession {
 	private static PreparedStatement CREATE_NEW_POST_CATEGORY;
 	private static PreparedStatement SELECT_ALL_POSTS_BY_CATEGORY;
 	private static PreparedStatement SELECT_NEWEST_POSTS_BY_CATEGORY;
-	private static PreparedStatement SELECT_ALL_POSTS_BY_AUTHOR;
+	private static PreparedStatement SELECT_ALL_POSTS_BY_AUTHOR_QUORUM;
+	private static PreparedStatement SELECT_ALL_POSTS_BY_AUTHOR_ONE;
 	private static PreparedStatement SELECT_NEWEST_POSTS_BY_AUTHOR;
 	private static PreparedStatement DELETE_POST_BY_AUTHOR;
 	private static PreparedStatement DELETE_POST_BY_CATEGORY;
@@ -93,7 +102,8 @@ public class BackendSession {
 		try {
 			SELECT_ALL_POSTS_BY_CATEGORY = session.prepare("SELECT * from posts_by_category where categoryName = (?)");
 			SELECT_NEWEST_POSTS_BY_CATEGORY = session.prepare("SELECT * from posts_by_category where categoryName = (?) LIMIT 10");
-			SELECT_ALL_POSTS_BY_AUTHOR = session.prepare("SELECT * from posts_by_author where authorId = (?)");
+			SELECT_ALL_POSTS_BY_AUTHOR_QUORUM = session.prepare("SELECT * from posts_by_author where authorId = (?)").setConsistencyLevel(QUORUM);
+			SELECT_ALL_POSTS_BY_AUTHOR_ONE = session.prepare("SELECT * from posts_by_author where authorId = (?)").setConsistencyLevel(ONE);
 			SELECT_NEWEST_POSTS_BY_AUTHOR = session.prepare("SELECT * from posts_by_author where authorId = (?) LIMIT 10");
 			SELECT_CONCRETE_POST_BY_CATEGORY = session.prepare("SELECT * FROM posts_by_category where categoryName = (?) and createdAt = (?) and postId = (?)");
 			SELECT_CONCRETE_POST_BY_AUTHOR = session.prepare("SELECT * FROM posts_by_author where authorId = (?) and createdAt = (?) and postId = (?)");
@@ -155,9 +165,11 @@ public class BackendSession {
 		return builder.toString();
 	}
 
-	public String selectAllPostsByAuthor(UUID authorId) throws BackendException {
-		StringBuilder builder = new StringBuilder();
-		BoundStatement bs = new BoundStatement(SELECT_ALL_POSTS_BY_AUTHOR);
+	public List<Row> selectAllPostsByAuthor(UUID authorId, ConsistencyLevel consistencyLevel) throws BackendException {
+//		StringBuilder builder = new StringBuilder();
+		BoundStatement bs = new BoundStatement(
+				consistencyLevel == QUORUM ? SELECT_ALL_POSTS_BY_AUTHOR_QUORUM : SELECT_ALL_POSTS_BY_AUTHOR_ONE
+		);
 		bs.bind(authorId);
 
 		ResultSet rs = null;
@@ -168,9 +180,9 @@ public class BackendSession {
 			throw new BackendException("Could not perform a query: select all posts. " + e.getMessage() + ".", e);
 		}
 
-		showPostsByAuthor(rs, builder);
+//		showPostsByAuthor(rs, builder);
 
-		return builder.toString();
+		return rs.all();
 	}
 
 	public String selectNewestPostsByAuthor(UUID authorId) throws BackendException {
@@ -288,7 +300,7 @@ public class BackendSession {
 		} catch (Exception e) {
 			throw new BackendException("Could not perform insert new post operation. " + e.getMessage() + ".", e);
 		}
-		logger.info("New post created");
+//		logger.info("New post created");
 	}
 
 	public void editPost(UUID postId, UUID authorId, String newPostContent, Timestamp createdAt, String categoryName) throws BackendException {

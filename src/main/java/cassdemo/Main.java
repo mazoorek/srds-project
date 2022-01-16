@@ -1,15 +1,11 @@
 package cassdemo;
 
 import java.io.IOException;
-import java.nio.charset.Charset;
-import java.sql.Timestamp;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.*;
-import java.util.concurrent.ThreadLocalRandom;
 
 import cassdemo.backend.BackendException;
 import cassdemo.backend.BackendSession;
+import cassdemo.scenarios.FirstScenario;
 
 public class Main {
 
@@ -29,7 +25,7 @@ public class Main {
 		return generatedString;
 	}
 
-	public static void main(String[] args) throws IOException, BackendException {
+	public static void main(String[] args) throws IOException, BackendException, InterruptedException {
 		String contactPoint = null;
 		String keyspace = null;
 
@@ -44,6 +40,7 @@ public class Main {
 		}
 			
 		BackendSession session = new BackendSession(contactPoint, keyspace);
+		ScenarioService scenarioService = new ScenarioService();
 
 		Scanner sc= new Scanner(System.in);    //System.in is a standard input stream
 		System.out.print("Enter first number- ");
@@ -56,7 +53,7 @@ public class Main {
 			if(scenario == 0) {
 				break;
 			} else if (scenario == 1) {
-				System.out.println("tutaj");
+				scenarioService.execute(new FirstScenario(session), 30);
 			}
 		}
 

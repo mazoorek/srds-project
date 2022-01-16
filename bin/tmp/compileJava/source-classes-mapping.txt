@@ -1,6 +1,10 @@
-cassdemo/backend/BackendSession.java
- cassdemo.backend.BackendSession
+cassdemo/ScenarioService.java
+ cassdemo.ScenarioService
 cassdemo/backend/BackendException.java
  cassdemo.backend.BackendException
+cassdemo/backend/BackendSession.java
+ cassdemo.backend.BackendSession
+cassdemo/scenarios/FirstScenario.java
+ cassdemo.scenarios.FirstScenario
 cassdemo/Main.java
  cassdemo.Main
