@@ -33,9 +33,10 @@ public class SecondScenario extends Thread {
                 String postContent = "abc" + i;
                 Timestamp timestamp = new Timestamp(System.currentTimeMillis());
                 session.createNewPost(postId, userId, postContent, timestamp, name, categoryName, ConsistencyLevel.ONE);
-                List<Row> posts = session.selectAllPostsByAuthor(userId, ConsistencyLevel.ONE);
-                if(i + 1 != posts.size()) {
-                    System.out.printf("[%s] expected amount of posts:%d actual:%d %s %n", userId, i + 1,posts.size(), i + 1 == posts.size() ? "" : "ANOMALY");
+                List<Row> posts = session.selectConcretePostByAuthor(userId, timestamp, postId, ConsistencyLevel.ONE);
+
+                if(posts.size() == 0) {
+                    System.out.printf("[%s] expected post with id:%s, iteration: %d %n", userId, postId,i);
                 }
 
             }

@@ -67,7 +67,8 @@ public class BackendSession {
 	private static PreparedStatement DELETE_POST_BY_AUTHOR;
 	private static PreparedStatement DELETE_POST_BY_CATEGORY;
 	private static PreparedStatement SELECT_CONCRETE_POST_BY_CATEGORY;
-	private static PreparedStatement SELECT_CONCRETE_POST_BY_AUTHOR;
+	private static PreparedStatement SELECT_CONCRETE_POST_BY_AUTHOR_ONE;
+	private static PreparedStatement SELECT_CONCRETE_POST_BY_AUTHOR_QUORUM;
 	private static PreparedStatement EDIT_CONCRETE_POST_BY_CATEGORY;
 	private static PreparedStatement EDIT_CONCRETE_POST_BY_AUTHOR;
 
@@ -108,10 +109,11 @@ public class BackendSession {
 			SELECT_ALL_POSTS_BY_AUTHOR_ONE = session.prepare("SELECT * from posts_by_author where authorId = (?)").setConsistencyLevel(ONE);
 			SELECT_NEWEST_POSTS_BY_AUTHOR = session.prepare("SELECT * from posts_by_author where authorId = (?) LIMIT 10");
 			SELECT_CONCRETE_POST_BY_CATEGORY = session.prepare("SELECT * FROM posts_by_category where categoryName = (?) and createdAt = (?) and postId = (?)");
-			SELECT_CONCRETE_POST_BY_AUTHOR = session.prepare("SELECT * FROM posts_by_author where authorId = (?) and createdAt = (?) and postId = (?)");
+			SELECT_CONCRETE_POST_BY_AUTHOR_ONE = session.prepare("SELECT * FROM posts_by_author where authorId = (?) and createdAt = (?) and postId = (?)").setConsistencyLevel(ONE);
+			SELECT_CONCRETE_POST_BY_AUTHOR_QUORUM = session.prepare("SELECT * FROM posts_by_author where authorId = (?) and createdAt = (?) and postId = (?)").setConsistencyLevel(ONE);
 
 			CREATE_NEW_USER = session.prepare("INSERT INTO users (userId, name, password, email, age) VALUES (?, ?, ?, ?, ?)");
-			CREATE_NEW_POST_AUTHOR_QUORUM = session.prepare("INSERT INTO Posts_by_author (postId, postContent, createdAt, authorId, authorName) VALUES (?, ?, ?, ?, ?)").setConsistencyLevel(QUORUM);
+			CREATE_NEW_POST_AUTHOR_QUORUM = session.prepare("INSERT INTO Posts_by_author (postId, postContent, createdAt, authorId, authorName) VALUES (?, ?, ?, ?, ?)").setConsistencyLevel(ONE);
 			CREATE_NEW_POST_AUTHOR_ONE = session.prepare("INSERT INTO Posts_by_author (postId, postContent, createdAt, authorId, authorName) VALUES (?, ?, ?, ?, ?)").setConsistencyLevel(ONE);
 			CREATE_NEW_POST_CATEGORY_QUORUM = session.prepare("INSERT INTO Posts_by_category (categoryName, postId, postContent, createdAt, authorId, authorName) VALUES (?, ?, ?, ?, ?, ?)").setConsistencyLevel(QUORUM);
 			CREATE_NEW_POST_CATEGORY_ONE = session.prepare("INSERT INTO Posts_by_category (categoryName, postId, postContent, createdAt, authorId, authorName) VALUES (?, ?, ?, ?, ?, ?)").setConsistencyLevel(ONE);
@@ -247,9 +249,10 @@ public class BackendSession {
 	}
 
 
-	public String selectConcretePostByAuthor(UUID authorId, Timestamp createdAt, UUID postId) throws BackendException {
-		StringBuilder builder = new StringBuilder();
-		BoundStatement bs = new BoundStatement(SELECT_CONCRETE_POST_BY_AUTHOR);
+	public List<Row> selectConcretePostByAuthor(UUID authorId, Timestamp createdAt, UUID postId, ConsistencyLevel consistencyLevel) throws BackendException {
+		BoundStatement bs = new BoundStatement(
+				consistencyLevel == QUORUM ? SELECT_CONCRETE_POST_BY_AUTHOR_QUORUM : SELECT_CONCRETE_POST_BY_AUTHOR_ONE
+		);
 		bs.bind(authorId, createdAt, postId);
 
 		ResultSet rs = null;
@@ -260,9 +263,7 @@ public class BackendSession {
 			throw new BackendException("Could not perform a query: select all newest posts. " + e.getMessage() + ".", e);
 		}
 
-		showPostsByAuthor(rs, builder);
-
-		return builder.toString();
+		return rs.all();
 	}
 
 	public void deletePost(UUID postId, UUID authorId, Timestamp createdAt, String categoryName) throws BackendException {
@@ -304,7 +305,6 @@ public class BackendSession {
 		} catch (Exception e) {
 			throw new BackendException("Could not perform insert new post operation. " + e.getMessage() + ".", e);
 		}
-//		logger.info("New post created");
 	}
 
 	public void editPost(UUID postId, UUID authorId, String newPostContent, Timestamp createdAt, String categoryName) throws BackendException {
