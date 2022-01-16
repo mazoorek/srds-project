@@ -1,4 +1,3 @@
-CONSISTENCY ONE;
 
 CREATE KEYSPACE IF NOT EXISTS Blog
   WITH REPLICATION = { 'class' : 'SimpleStrategy', 'replication_factor' : 2 };

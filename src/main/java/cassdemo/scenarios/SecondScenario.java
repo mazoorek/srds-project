@@ -9,10 +9,10 @@ import java.sql.Timestamp;
 import java.util.List;
 import java.util.UUID;
 
-public class FirstScenario extends Thread {
+public class SecondScenario extends Thread {
     BackendSession session;
 
-    public FirstScenario(BackendSession session) {
+    public SecondScenario(BackendSession session) {
         this.session = session;
     }
 
@@ -32,9 +32,9 @@ public class FirstScenario extends Thread {
                 String categoryName = "category1";
                 String postContent = "abc" + i;
                 Timestamp timestamp = new Timestamp(System.currentTimeMillis());
-                session.createNewPost(postId, userId, postContent, timestamp, name, categoryName, ConsistencyLevel.QUORUM);
-                List<Row> posts = session.selectAllPostsByAuthor(userId, ConsistencyLevel.QUORUM);
-                if( i + 1 != posts.size()) {
+                session.createNewPost(postId, userId, postContent, timestamp, name, categoryName, ConsistencyLevel.ONE);
+                List<Row> posts = session.selectAllPostsByAuthor(userId, ConsistencyLevel.ONE);
+                if(i + 1 != posts.size()) {
                     System.out.printf("[%s] expected amount of posts:%d actual:%d %s %n", userId, i + 1,posts.size(), i + 1 == posts.size() ? "" : "ANOMALY");
                 }
 
