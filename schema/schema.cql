@@ -11,7 +11,7 @@ CREATE TABLE Comments_By_Post (
   authorName varchar,
   createdAt timestamp,
   commentId uuid,
-  content varchar,
+  commentContent varchar,
   PRIMARY KEY ((postId), createdAt, commentId)
 )
   WITH CLUSTERING ORDER BY (createdAt DESC);
@@ -30,7 +30,7 @@ CREATE TABLE Comments_by_author (
   authorId uuid,
   createdAt timestamp,
   commentId uuid,
-  content varchar,
+  commentContent varchar,
   PRIMARY KEY ((authorId), createdAt, commentId)
 )
   WITH CLUSTERING ORDER BY (createdAt DESC);

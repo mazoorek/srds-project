@@ -63,11 +63,8 @@ public class Main {
 			UUID postId = UUID.randomUUID();
 			String categoryName = "category1";
 			String postContent = "abc" + i;
-//			LocalDateTime ldt = LocalDate.now();
 			Timestamp timestamp = new Timestamp(System.currentTimeMillis());
 			session.createNewPost(postId, userId, postContent, timestamp, name, categoryName);
-
-			System.out.println("BEFORE DELETE: ");
 
 			System.out.println("---------- po authorze ----------");
 			String postOutputAuthor1 = session.selectConcretePostByAuthor(userId, timestamp, postId);
@@ -76,18 +73,20 @@ public class Main {
 			String postOutputCategory1 = session.selectConcretePostByCategory(categoryName, timestamp, postId);
 			System.out.println(postOutputCategory1);
 
-			String newPostContent = "Nowy content";
+			UUID commentId = UUID.randomUUID();
+			String commentContent = "Komentarz";
 
 
-			session.editPost(postId, userId, newPostContent, timestamp, categoryName);
-			System.out.println("AFTER EDIT: ");
+			session.createNewComment(postId, userId, name, timestamp, commentId, commentContent);
 
-			System.out.println("---------- po authorze ----------");
-			String postOutputAuthor2 = session.selectConcretePostByAuthor(userId, timestamp, postId);
-			System.out.println(postOutputAuthor2);
-			System.out.println("---------- po category ----------");
-			String postOutputCategory2 = session.selectConcretePostByCategory(categoryName, timestamp, postId);
-			System.out.println(postOutputCategory2);
+//			System.out.println("DISPLAY EDIT: ");
+//
+//			System.out.println("---------- po authorze ----------");
+//			String postOutputAuthor2 = session.selectConcretePostByAuthor(userId, timestamp, postId);
+//			System.out.println(postOutputAuthor2);
+//			System.out.println("---------- po category ----------");
+//			String postOutputCategory2 = session.selectConcretePostByCategory(categoryName, timestamp, postId);
+//			System.out.println(postOutputCategory2);
 
 //			//Delete post
 //			session.deletePost(postId, userId);

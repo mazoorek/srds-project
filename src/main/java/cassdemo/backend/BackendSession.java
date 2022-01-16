@@ -64,6 +64,9 @@ public class BackendSession {
 	private static PreparedStatement EDIT_CONCRETE_POST_BY_CATEGORY;
 	private static PreparedStatement EDIT_CONCRETE_POST_BY_AUTHOR;
 
+	private static PreparedStatement CREATE_NEW_COMMENT_BY_POST;
+	private static PreparedStatement CREATE_NEW_COMMENT_BY_AUTHOR;
+
 	private static final String POST_BY_CATEGORY_FORMAT = "- %-10s %-10s %-10s %-10s %-10s %-10s-\n";
 	private static final String POST_BY_AUTHOR_FORMAT = "- %-10s %-10s %-10s %-10s %-10s -\n";
 	// private static final SimpleDateFormat df = new
@@ -87,6 +90,11 @@ public class BackendSession {
 
 			EDIT_CONCRETE_POST_BY_CATEGORY = session.prepare("UPDATE posts_by_category set postContent = (?) where categoryName = (?) and createdAt = (?) and postId = (?)");
 			EDIT_CONCRETE_POST_BY_AUTHOR = session.prepare("UPDATE posts_by_author set postContent = (?) where authorId = (?) and createdAt = (?) and postId = (?)");
+
+			CREATE_NEW_COMMENT_BY_POST = session.prepare("INSERT INTO comments_by_post (postId, authorId, authorName, createdAt, commentId, commentContent) VALUES (?, ?, ?, ?, ?, ?)");
+			CREATE_NEW_COMMENT_BY_AUTHOR = session.prepare("INSERT INTO comments_by_author (postId, authorId, createdAt, commentId, commentContent) VALUES (?, ?, ?, ?, ?)");
+
+
 
 		} catch (Exception e) {
 			throw new BackendException("Could not prepare statements. " + e.getMessage() + ".", e);
@@ -287,6 +295,22 @@ public class BackendSession {
 			throw new BackendException("Could not perform insert new post operation. " + e.getMessage() + ".", e);
 		}
 		logger.info("Post edited");
+	}
+
+	public void createNewComment(UUID postId, UUID authorId, String authorName, Timestamp createdAt, UUID commentId, String commentContent) throws BackendException {
+		BoundStatement createNewCommentByPostStatement = new BoundStatement(CREATE_NEW_COMMENT_BY_POST);
+		BoundStatement createNewCommentByAuthorStatement = new BoundStatement(CREATE_NEW_COMMENT_BY_AUTHOR);
+
+		createNewCommentByPostStatement.bind(postId, authorId, authorName, createdAt, commentId, commentContent);
+		createNewCommentByAuthorStatement.bind(postId, authorId, createdAt, commentId, commentContent);
+
+		try {
+			session.execute(createNewCommentByPostStatement);
+			session.execute(createNewCommentByAuthorStatement);
+		} catch (Exception e) {
+			throw new BackendException("Could not perform insert new comment operation. " + e.getMessage() + ".", e);
+		}
+		logger.info("New comment created");
 	}
 
 
