@@ -79,14 +79,14 @@ public class Main {
 
 			session.createNewComment(postId, userId, name, timestamp, commentId, commentContent);
 
-//			System.out.println("DISPLAY EDIT: ");
-//
-//			System.out.println("---------- po authorze ----------");
-//			String postOutputAuthor2 = session.selectConcretePostByAuthor(userId, timestamp, postId);
-//			System.out.println(postOutputAuthor2);
-//			System.out.println("---------- po category ----------");
-//			String postOutputCategory2 = session.selectConcretePostByCategory(categoryName, timestamp, postId);
-//			System.out.println(postOutputCategory2);
+			System.out.println("DISPLAY COMMENTS: ");
+
+			System.out.println("---------- by POST ID ----------");
+			String commentByPostOutput = session.selectCommentsByPost(postId);
+			System.out.println(commentByPostOutput);
+			System.out.println("---------- po AUTHOR ID ----------");
+			String commentByAuthorOutput = session.selectCommentsByAuthor(userId);
+			System.out.println(commentByAuthorOutput);
 
 //			//Delete post
 //			session.deletePost(postId, userId);

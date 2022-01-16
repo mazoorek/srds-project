@@ -67,8 +67,13 @@ public class BackendSession {
 	private static PreparedStatement CREATE_NEW_COMMENT_BY_POST;
 	private static PreparedStatement CREATE_NEW_COMMENT_BY_AUTHOR;
 
+	private static PreparedStatement SELECT_COMMENTS_BY_POST;
+	private static PreparedStatement SELECT_COMMENTS_BY_AUTHOR;
+
 	private static final String POST_BY_CATEGORY_FORMAT = "- %-10s %-10s %-10s %-10s %-10s %-10s-\n";
 	private static final String POST_BY_AUTHOR_FORMAT = "- %-10s %-10s %-10s %-10s %-10s -\n";
+	private static final String COMMENTS_BY_POST_FORMAT = "- %-10s %-10s %-10s %-10s %-10s %-10s -\n";
+	private static final String COMMENTS_BY_AUTHOR_FORMAT = "- %-10s %-10s %-10s %-10s %-10s -\n";
 	// private static final SimpleDateFormat df = new
 	// SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
@@ -93,6 +98,9 @@ public class BackendSession {
 
 			CREATE_NEW_COMMENT_BY_POST = session.prepare("INSERT INTO comments_by_post (postId, authorId, authorName, createdAt, commentId, commentContent) VALUES (?, ?, ?, ?, ?, ?)");
 			CREATE_NEW_COMMENT_BY_AUTHOR = session.prepare("INSERT INTO comments_by_author (postId, authorId, createdAt, commentId, commentContent) VALUES (?, ?, ?, ?, ?)");
+
+			SELECT_COMMENTS_BY_POST = session.prepare("SELECT * from comments_by_post where postId = (?)");
+			SELECT_COMMENTS_BY_AUTHOR = session.prepare("SELECT * from comments_by_author where authorId = (?)");
 
 
 
@@ -216,29 +224,6 @@ public class BackendSession {
 		return builder.toString();
 	}
 
-	private void showPostsByCategory(ResultSet rs, StringBuilder builder) {
-		for (Row row : rs) {
-			String category = row.getString("categoryName");
-			UUID postId = row.getUUID("postId");
-			String postContent = row.getString("postContent");
-			Date createdAt = row.getTimestamp("createdAt");
-			UUID authorId = row.getUUID("authorId");
-			String authorName = row.getString("authorName");
-			builder.append(String.format(POST_BY_CATEGORY_FORMAT, category, postId, postContent, createdAt, authorId, authorName));
-		}
-	}
-
-	private void showPostsByAuthor(ResultSet rs, StringBuilder builder) {
-		for (Row row : rs) {
-			UUID postId = row.getUUID("postId");
-			String postContent = row.getString("postContent");
-			Date createdAt = row.getTimestamp("createdAt");
-			UUID authorId = row.getUUID("authorId");
-			String authorName = row.getString("authorName");
-			builder.append(String.format(POST_BY_AUTHOR_FORMAT, postId, postContent, createdAt, authorId, authorName));
-		}
-	}
-
 	public void deletePost(UUID postId, UUID authorId, Timestamp createdAt, String categoryName) throws BackendException {
 		BoundStatement deletePostByCategoryStatement = new BoundStatement(DELETE_POST_BY_CATEGORY);
 		BoundStatement deletePostByAuthorStatement = new BoundStatement(DELETE_POST_BY_AUTHOR);
@@ -312,6 +297,89 @@ public class BackendSession {
 		}
 		logger.info("New comment created");
 	}
+
+	public String selectCommentsByPost(UUID postId) throws BackendException {
+		StringBuilder builder = new StringBuilder();
+		BoundStatement bs = new BoundStatement(SELECT_COMMENTS_BY_POST);
+		bs.bind(postId);
+
+		ResultSet rs = null;
+
+		try {
+			rs = session.execute(bs);
+		} catch (Exception e) {
+			throw new BackendException("Could not perform a query: select all comments by post. " + e.getMessage() + ".", e);
+		}
+
+		showCommentsByPost(rs, builder);
+
+		return builder.toString();
+	}
+
+	public String selectCommentsByAuthor(UUID authorId) throws BackendException {
+		StringBuilder builder = new StringBuilder();
+		BoundStatement bs = new BoundStatement(SELECT_COMMENTS_BY_AUTHOR);
+		bs.bind(authorId);
+
+		ResultSet rs = null;
+
+		try {
+			rs = session.execute(bs);
+		} catch (Exception e) {
+			throw new BackendException("Could not perform a query: select all comments by author. " + e.getMessage() + ".", e);
+		}
+
+		showCommentsByAuthor(rs, builder);
+
+		return builder.toString();
+	}
+
+	private void showPostsByCategory(ResultSet rs, StringBuilder builder) {
+		for (Row row : rs) {
+			String category = row.getString("categoryName");
+			UUID postId = row.getUUID("postId");
+			String postContent = row.getString("postContent");
+			Date createdAt = row.getTimestamp("createdAt");
+			UUID authorId = row.getUUID("authorId");
+			String authorName = row.getString("authorName");
+			builder.append(String.format(POST_BY_CATEGORY_FORMAT, category, postId, postContent, createdAt, authorId, authorName));
+		}
+	}
+
+	private void showPostsByAuthor(ResultSet rs, StringBuilder builder) {
+		for (Row row : rs) {
+			UUID postId = row.getUUID("postId");
+			String postContent = row.getString("postContent");
+			Date createdAt = row.getTimestamp("createdAt");
+			UUID authorId = row.getUUID("authorId");
+			String authorName = row.getString("authorName");
+			builder.append(String.format(POST_BY_AUTHOR_FORMAT, postId, postContent, createdAt, authorId, authorName));
+		}
+	}
+
+	private void showCommentsByPost(ResultSet rs, StringBuilder builder) {
+		for (Row row : rs) {
+			UUID postId = row.getUUID("postId");
+			UUID authorId = row.getUUID("authorId");
+			String authorName = row.getString("authorName");
+			Date createdAt = row.getTimestamp("createdAt");
+			UUID commentId = row.getUUID("commentId");
+			String commentContent = row.getString("commentContent");
+			builder.append(String.format(COMMENTS_BY_POST_FORMAT, postId, authorId, authorName, createdAt, commentId, commentContent));
+		}
+	}
+
+	private void showCommentsByAuthor(ResultSet rs, StringBuilder builder) {
+		for (Row row : rs) {
+			UUID postId = row.getUUID("postId");
+			UUID authorId = row.getUUID("authorId");
+			Date createdAt = row.getTimestamp("createdAt");
+			UUID commentId = row.getUUID("commentId");
+			String commentContent = row.getString("commentContent");
+			builder.append(String.format(COMMENTS_BY_AUTHOR_FORMAT, postId, authorId, createdAt, commentId, commentContent));
+		}
+	}
+
 
 
 	protected void finalize() {
