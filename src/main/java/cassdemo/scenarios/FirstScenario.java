@@ -32,8 +32,8 @@ public class FirstScenario extends Thread {
                 String categoryName = "category1";
                 String postContent = "abc" + i;
                 Timestamp timestamp = new Timestamp(System.currentTimeMillis());
-                session.createNewPost(postId, userId, postContent, timestamp, name, categoryName, ConsistencyLevel.QUORUM);
-                List<Row> posts = session.selectConcretePostByAuthor(userId, timestamp, postId, ConsistencyLevel.QUORUM);
+                session.createNewPost(postId, userId, postContent, timestamp, name, categoryName);
+                List<Row> posts = session.selectConcretePostByAuthor(userId, timestamp, postId);
 
                 if(posts.size() == 0) {
                     System.out.printf("[%s] expected post with id:%s, iteration: %d %n", userId, postId,i);

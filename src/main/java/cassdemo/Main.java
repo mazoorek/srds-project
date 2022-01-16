@@ -6,7 +6,6 @@ import java.util.*;
 import cassdemo.backend.BackendException;
 import cassdemo.backend.BackendSession;
 import cassdemo.scenarios.FirstScenario;
-import cassdemo.scenarios.SecondScenario;
 
 public class Main {
 
@@ -49,16 +48,12 @@ public class Main {
 		while(true) {
 			System.out.println("Choose scenario:");
 			System.out.println("0: Exit program");
-			System.out.println("1: 50 users adding posts with QUORUM:");
-			System.out.println("2: 50 users adding posts with ONE:");
+			System.out.println("1: 50 users adding posts expect seeing added:");
 			scenario = sc.nextInt();
 			if(scenario == 0) {
 				break;
 			} else if (scenario == 1) {
 				scenarioService.execute(new FirstScenario(session), 50);
-			}
-			else if (scenario == 2) {
-				scenarioService.execute(new SecondScenario(session), 50);
 			}
 		}
 
