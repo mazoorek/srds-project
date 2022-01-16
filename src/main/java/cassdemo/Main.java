@@ -79,7 +79,7 @@ public class Main {
 
 			session.createNewComment(postId, userId, name, timestamp, commentId, commentContent);
 
-			System.out.println("BEFORE COMMENT DELETE: ");
+			System.out.println("BEFORE COMMENT UPDATE: ");
 
 			System.out.println("---------- by POST ID ----------");
 			String commentByPostOutput = session.selectCommentsByPost(postId);
@@ -88,10 +88,11 @@ public class Main {
 			String commentByAuthorOutput = session.selectCommentsByAuthor(userId);
 			System.out.println(commentByAuthorOutput);
 
-			//Delete post
-			session.deleteComment(postId, timestamp, commentId, userId);
+			//Edit comment
+			String newCommentContent = "bla bla nowy comment content";
+			session.editComment(postId, timestamp, commentId, userId, newCommentContent);
 
-			System.out.println("AFTER COMMENT DELETE: ");
+			System.out.println("AFTER COMMENT UPDATE: ");
 
 			System.out.println("---------- by POST ID ----------");
 			String commentByPostOutput2 = session.selectCommentsByPost(postId);

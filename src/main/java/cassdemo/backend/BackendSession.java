@@ -73,6 +73,9 @@ public class BackendSession {
 	private static PreparedStatement DELETE_COMMENT_BY_POST;
 	private static PreparedStatement DELETE_COMMENT_BY_AUTHOR;
 
+	private static PreparedStatement UPDATE_COMMENT_BY_POST;
+	private static PreparedStatement UPDATE_COMMENT_BY_AUTHOR;
+
 	private static final String POST_BY_CATEGORY_FORMAT = "- %-10s %-10s %-10s %-10s %-10s %-10s-\n";
 	private static final String POST_BY_AUTHOR_FORMAT = "- %-10s %-10s %-10s %-10s %-10s -\n";
 	private static final String COMMENTS_BY_POST_FORMAT = "- %-10s %-10s %-10s %-10s %-10s %-10s -\n";
@@ -108,6 +111,8 @@ public class BackendSession {
 			DELETE_COMMENT_BY_POST = session.prepare("DELETE FROM comments_by_post where postId = (?) and createdAt = (?) and commentId = (?)");
 			DELETE_COMMENT_BY_AUTHOR = session.prepare("DELETE FROM comments_by_author where authorId = (?) and createdAt = (?) and commentId = (?)");
 
+			UPDATE_COMMENT_BY_POST = session.prepare("UPDATE comments_by_post set commentContent = (?) where postId = (?) and createdAt = (?) and commentId = (?)");
+			UPDATE_COMMENT_BY_AUTHOR = session.prepare("UPDATE comments_by_author set commentContent = (?) where authorId = (?) and createdAt = (?) and commentId = (?)");
 
 
 		} catch (Exception e) {
@@ -354,6 +359,22 @@ public class BackendSession {
 			throw new BackendException("Could not perform delete comment operation. " + e.getMessage() + ".", e);
 		}
 		logger.info("Comment with commentId = " + commentId + " and authorId = " + authorId + " and postId = " + postId + " deleted");
+	}
+
+	public void editComment(UUID postId, Timestamp createdAt, UUID commentId, UUID authorId, String newCommentContent) throws BackendException {
+		BoundStatement editCommentByPost = new BoundStatement(UPDATE_COMMENT_BY_POST);
+		BoundStatement editCommentByAuthor = new BoundStatement(UPDATE_COMMENT_BY_AUTHOR);
+
+		editCommentByPost.bind(newCommentContent, postId, createdAt, commentId);
+		editCommentByAuthor.bind(newCommentContent, authorId, createdAt, commentId);
+
+		try {
+			session.execute(editCommentByPost);
+			session.execute(editCommentByAuthor);
+		} catch (Exception e) {
+			throw new BackendException("Could not perform edit comment operation. " + e.getMessage() + ".", e);
+		}
+		logger.info("Comment edited");
 	}
 
 	private void showPostsByCategory(ResultSet rs, StringBuilder builder) {
