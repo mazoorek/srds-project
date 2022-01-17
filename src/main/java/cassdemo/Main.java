@@ -1,12 +1,14 @@
 package cassdemo;
 
 import java.io.IOException;
+import java.sql.Timestamp;
 import java.util.*;
 
 import cassdemo.backend.BackendException;
 import cassdemo.backend.BackendSession;
 import cassdemo.scenarios.FirstScenario;
 import cassdemo.scenarios.SecondScenario;
+import cassdemo.scenarios.ThirdScenario;
 
 public class Main {
 
@@ -51,6 +53,7 @@ public class Main {
 			System.out.println("0: Exit program");
 			System.out.println("1: 50 users adding posts expect seeing added by primary key:");
 			System.out.println("2: 50 users adding posts expect seeing added by authorId:");
+			System.out.println("3: 100 users like one post expect seeing correct amount of likes:");
 			scenario = sc.nextInt();
 			if(scenario == 0) {
 				break;
@@ -58,6 +61,25 @@ public class Main {
 				scenarioService.execute(new FirstScenario(session), 50);
 			} else if (scenario == 2) {
 				scenarioService.execute(new SecondScenario(session), 50);
+			} else if (scenario == 3) {
+				// Create new user
+				UUID userId = UUID.randomUUID();
+				String name = UUID.randomUUID().toString().replace("-", "");
+				String password = UUID.randomUUID().toString().replace("-", "");
+				String email = UUID.randomUUID().toString().replace("-", "");
+				int maxAge = 100;
+				int minAge = 18;
+				int age = (int) Math.floor(Math.random() * (maxAge - minAge + 1) + minAge);
+				session.createNewUser(userId, name, password, email, age);
+				// Create new post
+				UUID postId = UUID.randomUUID();
+				System.out.println("---- POST ID: " + postId + " -----");
+				String categoryName = "counterTestCategory";
+				String postContent = UUID.randomUUID().toString().replace("-", "");
+				Timestamp timestamp = new Timestamp(System.currentTimeMillis());
+				session.createNewPost(postId, userId, postContent, timestamp, name, categoryName);
+				scenarioService.execute(new ThirdScenario(session, postId, timestamp, userId), 100);
+
 			}
 		}
 

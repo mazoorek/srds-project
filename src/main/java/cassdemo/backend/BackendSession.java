@@ -129,11 +129,11 @@ public class BackendSession {
 			UPDATE_COMMENT_BY_AUTHOR = session.prepare("UPDATE comments_by_author set commentContent = (?) where authorId = (?) and createdAt = (?) and commentId = (?)");
 
 			SELECT_POSTS_LIKED_BY_USER = session.prepare("SELECT * FROM liked_post_by_user where userId = (?)");
-			CREATE_LIKED_POST_BY_USER = session.prepare("INSERT INTO liked_post_by_user (postId, userId) VALUES (?, ?)");
+			CREATE_LIKED_POST_BY_USER = session.prepare("INSERT INTO liked_post_by_user (postId, userId) VALUES (?, ?)").setConsistencyLevel(ONE);
 			DELETE_LIKED_POST_BY_USER = session.prepare("DELETE FROM liked_post_by_user where userId = (?) and postId = (?)");
 
 			SELECT_POST_LIKES = session.prepare("SELECT * from post_likes where postId = (?)");
-			INCREMENT_POST_LIKE = session.prepare("UPDATE post_likes SET postLikesCounter = postLikesCounter + 1 where postId = (?)");
+			INCREMENT_POST_LIKE = session.prepare("UPDATE post_likes SET postLikesCounter = postLikesCounter + 1 where postId = (?)").setConsistencyLevel(ONE);
 			DECREMENT_POST_LIKE = session.prepare("UPDATE post_likes SET postLikesCounter = postLikesCounter - 1 where postId = (?)");
 			DELETE_POST_LIKES = session.prepare("DELETE FROM post_likes where postId = (?)");
 
@@ -455,13 +455,14 @@ public class BackendSession {
 		return builder.toString();
 	}
 
-	public void incrementPostLikes(UUID postId) throws BackendException {
+	public void incrementPostLikes(UUID postId, UUID userId) throws BackendException {
 		BoundStatement incrementPostLikesStatement = new BoundStatement(INCREMENT_POST_LIKE);
 
 		incrementPostLikesStatement.bind(postId);
 
 		try {
 			session.execute(incrementPostLikesStatement);
+			createLikedPostByUser(postId, userId);
 		} catch (Exception e) {
 			throw new BackendException("Could not perform increment post likes operation. " + e.getMessage() + ".", e);
 		}
