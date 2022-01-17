@@ -88,6 +88,14 @@ public class BackendSession {
 
 	private static PreparedStatement DELETE_POST_LIKES;
 
+	private static PreparedStatement TRUNCATE_USERS;
+	private static PreparedStatement TRUNCATE_POSTS_BY_AUTHOR;
+	private static PreparedStatement TRUNCATE_POSTS_BY_CATEGORY;
+	private static PreparedStatement TRUNCATE_POSTS_LIKES;
+	private static PreparedStatement TRUNCATE_LIKED_POST_BY_USER;
+	private static PreparedStatement TRUNCATE_COMMENTS_BY_AUTHOR;
+	private static PreparedStatement TRUNCATE_COMMENTS_BY_POST;
+
 
 	private static final String POST_BY_CATEGORY_FORMAT = "- %-10s %-10s %-10s %-10s %-10s %-10s-\n";
 	private static final String POST_BY_AUTHOR_FORMAT = "- %-10s %-10s %-10s %-10s %-10s -\n";
@@ -117,10 +125,10 @@ public class BackendSession {
 			EDIT_CONCRETE_POST_BY_AUTHOR = session.prepare("UPDATE posts_by_author set postContent = (?) where authorId = (?) and createdAt = (?) and postId = (?)");
 
 			CREATE_NEW_COMMENT_BY_POST = session.prepare("INSERT INTO comments_by_post (postId, authorId, authorName, createdAt, commentId, commentContent) VALUES (?, ?, ?, ?, ?, ?)");
-			CREATE_NEW_COMMENT_BY_AUTHOR = session.prepare("INSERT INTO comments_by_author (postId, authorId, createdAt, commentId, commentContent) VALUES (?, ?, ?, ?, ?)");
+			CREATE_NEW_COMMENT_BY_AUTHOR = session.prepare("INSERT INTO comments_by_author (postId, authorId, createdAt, commentId, commentContent) VALUES (?, ?, ?, ?, ?)").setConsistencyLevel(ONE);
 
-			SELECT_COMMENTS_BY_POST = session.prepare("SELECT * from comments_by_post where postId = (?)");
-			SELECT_COMMENTS_BY_AUTHOR = session.prepare("SELECT * from comments_by_author where authorId = (?)");
+			SELECT_COMMENTS_BY_POST = session.prepare("SELECT * from comments_by_post where postId = (?)").setConsistencyLevel(ONE);
+			SELECT_COMMENTS_BY_AUTHOR = session.prepare("SELECT * from comments_by_author where authorId = (?)").setConsistencyLevel(ONE);
 
 			DELETE_COMMENT_BY_POST = session.prepare("DELETE FROM comments_by_post where postId = (?) and createdAt = (?) and commentId = (?)");
 			DELETE_COMMENT_BY_AUTHOR = session.prepare("DELETE FROM comments_by_author where authorId = (?) and createdAt = (?) and commentId = (?)");
@@ -136,12 +144,42 @@ public class BackendSession {
 			INCREMENT_POST_LIKE = session.prepare("UPDATE post_likes SET postLikesCounter = postLikesCounter + 1 where postId = (?)").setConsistencyLevel(ONE);
 			DECREMENT_POST_LIKE = session.prepare("UPDATE post_likes SET postLikesCounter = postLikesCounter - 1 where postId = (?)");
 			DELETE_POST_LIKES = session.prepare("DELETE FROM post_likes where postId = (?)");
+			TRUNCATE_USERS = session.prepare("TRUNCATE blog.users");
+			TRUNCATE_POSTS_BY_AUTHOR = session.prepare("TRUNCATE blog.posts_by_author");
+			TRUNCATE_POSTS_BY_CATEGORY = session.prepare("TRUNCATE blog.posts_by_category");
+			TRUNCATE_LIKED_POST_BY_USER = session.prepare("TRUNCATE blog.liked_post_by_user");
+			TRUNCATE_POSTS_LIKES = session.prepare("TRUNCATE blog.post_likes");
+			TRUNCATE_COMMENTS_BY_AUTHOR = session.prepare("TRUNCATE blog.comments_by_author");
+			TRUNCATE_COMMENTS_BY_POST = session.prepare("TRUNCATE blog.comments_by_post");
 
 		} catch (Exception e) {
 			throw new BackendException("Could not prepare statements. " + e.getMessage() + ".", e);
 		}
 
 		logger.info("Statements prepared");
+	}
+
+	public void truncateTables() throws BackendException {
+		BoundStatement bs1 = new BoundStatement(TRUNCATE_USERS);
+		BoundStatement bs2 = new BoundStatement(TRUNCATE_POSTS_BY_AUTHOR);
+		BoundStatement bs3 = new BoundStatement(TRUNCATE_POSTS_BY_CATEGORY);
+		BoundStatement bs4 = new BoundStatement(TRUNCATE_LIKED_POST_BY_USER);
+		BoundStatement bs5 = new BoundStatement(TRUNCATE_POSTS_LIKES);
+		BoundStatement bs6 = new BoundStatement(TRUNCATE_COMMENTS_BY_AUTHOR);
+		BoundStatement bs7 = new BoundStatement(TRUNCATE_COMMENTS_BY_POST);
+
+		try {
+			session.execute(bs1);
+			session.execute(bs2);
+			session.execute(bs3);
+			session.execute(bs4);
+			session.execute(bs5);
+			session.execute(bs6);
+			session.execute(bs7);
+			System.out.println("tables truncated");
+		} catch (Exception e) {
+			throw new BackendException("Could not perform a query: truncate tables. " + e.getMessage() + ".", e);
+		}
 	}
 
 
@@ -324,7 +362,6 @@ public class BackendSession {
 		} catch (Exception e) {
 			throw new BackendException("Could not perform insert new comment operation. " + e.getMessage() + ".", e);
 		}
-		logger.info("New comment created");
 	}
 
 	public String selectCommentsByPost(UUID postId) throws BackendException {
@@ -345,22 +382,16 @@ public class BackendSession {
 		return builder.toString();
 	}
 
-	public String selectCommentsByAuthor(UUID authorId) throws BackendException {
-		StringBuilder builder = new StringBuilder();
+	public List<Row> selectCommentsByAuthor(UUID authorId) throws BackendException {
 		BoundStatement bs = new BoundStatement(SELECT_COMMENTS_BY_AUTHOR);
 		bs.bind(authorId);
-
 		ResultSet rs = null;
-
 		try {
 			rs = session.execute(bs);
 		} catch (Exception e) {
 			throw new BackendException("Could not perform a query: select all comments by author. " + e.getMessage() + ".", e);
 		}
-
-		showCommentsByAuthor(rs, builder);
-
-		return builder.toString();
+		return rs.all();
 	}
 
 	public void deleteComment(UUID postId, Timestamp createdAt, UUID commentId, UUID authorId) throws BackendException {

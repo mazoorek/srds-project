@@ -7,6 +7,7 @@ import java.util.*;
 import cassdemo.backend.BackendException;
 import cassdemo.backend.BackendSession;
 import cassdemo.scenarios.FirstScenario;
+import cassdemo.scenarios.FourthScenario;
 import cassdemo.scenarios.SecondScenario;
 import cassdemo.scenarios.ThirdScenario;
 
@@ -54,6 +55,9 @@ public class Main {
 			System.out.println("1: 50 users adding posts expect seeing added by primary key:");
 			System.out.println("2: 50 users adding posts expect seeing added by authorId:");
 			System.out.println("3: 100 users like one post expect seeing correct amount of likes:");
+			System.out.println("4: 50 users commenting the same post:");
+			System.out.println("5: 50 users blog simulation:");
+			System.out.println("6: clear tables:");
 			scenario = sc.nextInt();
 			if(scenario == 0) {
 				break;
@@ -79,7 +83,28 @@ public class Main {
 				Timestamp timestamp = new Timestamp(System.currentTimeMillis());
 				session.createNewPost(postId, userId, postContent, timestamp, name, categoryName);
 				scenarioService.execute(new ThirdScenario(session, postId, timestamp, userId), 100);
+			} else if(scenario == 4) {
+				// Create new user
+				UUID userId = UUID.randomUUID();
+				String name = UUID.randomUUID().toString().replace("-", "");
+				String password = UUID.randomUUID().toString().replace("-", "");
+				String email = UUID.randomUUID().toString().replace("-", "");
+				int maxAge = 100;
+				int minAge = 18;
+				int age = (int) Math.floor(Math.random() * (maxAge - minAge + 1) + minAge);
+				session.createNewUser(userId, name, password, email, age);
+				// Create new post
+				UUID postId = UUID.randomUUID();
+				System.out.println("---- POST ID: " + postId + " -----");
+				String categoryName = "counterTestCategory";
+				String postContent = UUID.randomUUID().toString().replace("-", "");
+				Timestamp timestamp = new Timestamp(System.currentTimeMillis());
+				session.createNewPost(postId, userId, postContent, timestamp, name, categoryName);
+				scenarioService.execute(new FourthScenario(session, postId), 100);
+			} else if(scenario == 5) {
 
+			} else if(scenario == 6) {
+				session.truncateTables();
 			}
 		}
 

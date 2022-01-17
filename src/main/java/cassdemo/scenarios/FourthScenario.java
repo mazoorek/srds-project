@@ -8,11 +8,13 @@ import java.sql.Timestamp;
 import java.util.List;
 import java.util.UUID;
 
-public class SecondScenario extends Thread {
+public class FourthScenario extends Thread {
     BackendSession session;
+    UUID postId;
 
-    public SecondScenario(BackendSession session) {
+    public FourthScenario(BackendSession session, UUID postId) {
         this.session = session;
+        this.postId = postId;
     }
 
     @Override
@@ -27,17 +29,14 @@ public class SecondScenario extends Thread {
         try {
             session.createNewUser(userId, name, password, email, age);
             for (int i = 0; i < 20; i++) {
-                UUID postId = UUID.randomUUID();
-                String categoryName = "category1";
-                String postContent = "abc" + i;
+                UUID commentId = UUID.randomUUID();
+                String commentContent = "abc" + i;
                 Timestamp timestamp = new Timestamp(System.currentTimeMillis());
-                session.createNewPost(postId, userId, postContent, timestamp, name, categoryName);
-                List<Row> posts = session.selectAllPostsByAuthor(userId);
-
-                if(posts.size() !=  i + 1) {
-                    System.out.printf("[%s] expected %d posts, got: %d ANOMALY%n", userId, i + 1, posts.size());
+                session.createNewComment(postId, userId, name, timestamp, commentId, commentContent);
+                List<Row> comments = session.selectCommentsByAuthor(userId);
+                if(comments.size() !=  i + 1) {
+                    System.out.printf("[%s] expected %d comments, got: %d ANOMALY%n", userId, i + 1, comments.size());
                 }
-
             }
             System.out.println("-------");
         } catch (BackendException e) {
