@@ -6,5 +6,7 @@ cassdemo/backend/BackendSession.java
  cassdemo.backend.BackendSession
 cassdemo/scenarios/FirstScenario.java
  cassdemo.scenarios.FirstScenario
+cassdemo/scenarios/SecondScenario.java
+ cassdemo.scenarios.SecondScenario
 cassdemo/Main.java
  cassdemo.Main

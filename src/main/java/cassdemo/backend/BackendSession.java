@@ -59,8 +59,7 @@ public class BackendSession {
 	private static PreparedStatement CREATE_NEW_POST_CATEGORY;
 	private static PreparedStatement SELECT_ALL_POSTS_BY_CATEGORY;
 	private static PreparedStatement SELECT_NEWEST_POSTS_BY_CATEGORY;
-	private static PreparedStatement SELECT_ALL_POSTS_BY_AUTHOR_QUORUM;
-	private static PreparedStatement SELECT_ALL_POSTS_BY_AUTHOR_ONE;
+	private static PreparedStatement SELECT_ALL_POSTS_BY_AUTHOR;
 	private static PreparedStatement SELECT_NEWEST_POSTS_BY_AUTHOR;
 	private static PreparedStatement DELETE_POST_BY_AUTHOR;
 	private static PreparedStatement DELETE_POST_BY_CATEGORY;
@@ -102,8 +101,7 @@ public class BackendSession {
 		try {
 			SELECT_ALL_POSTS_BY_CATEGORY = session.prepare("SELECT * from posts_by_category where categoryName = (?)");
 			SELECT_NEWEST_POSTS_BY_CATEGORY = session.prepare("SELECT * from posts_by_category where categoryName = (?) LIMIT 10");
-			SELECT_ALL_POSTS_BY_AUTHOR_QUORUM = session.prepare("SELECT * from posts_by_author where authorId = (?)");
-			SELECT_ALL_POSTS_BY_AUTHOR_ONE = session.prepare("SELECT * from posts_by_author where authorId = (?)");
+			SELECT_ALL_POSTS_BY_AUTHOR = session.prepare("SELECT * from posts_by_author where authorId = (?)").setConsistencyLevel(QUORUM);
 			SELECT_NEWEST_POSTS_BY_AUTHOR = session.prepare("SELECT * from posts_by_author where authorId = (?) LIMIT 10");
 			SELECT_CONCRETE_POST_BY_CATEGORY = session.prepare("SELECT * FROM posts_by_category where categoryName = (?) and createdAt = (?) and postId = (?)");
 			SELECT_CONCRETE_POST_BY_AUTHOR = session.prepare("SELECT * FROM posts_by_author where authorId = (?) and createdAt = (?) and postId = (?)").setConsistencyLevel(QUORUM);
@@ -165,11 +163,9 @@ public class BackendSession {
 		return builder.toString();
 	}
 
-	public List<Row> selectAllPostsByAuthor(UUID authorId, ConsistencyLevel consistencyLevel) throws BackendException {
+	public List<Row> selectAllPostsByAuthor(UUID authorId) throws BackendException {
 //		StringBuilder builder = new StringBuilder();
-		BoundStatement bs = new BoundStatement(
-				consistencyLevel == QUORUM ? SELECT_ALL_POSTS_BY_AUTHOR_QUORUM : SELECT_ALL_POSTS_BY_AUTHOR_ONE
-		);
+		BoundStatement bs = new BoundStatement(SELECT_ALL_POSTS_BY_AUTHOR);
 		bs.bind(authorId);
 
 		ResultSet rs = null;
