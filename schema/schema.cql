@@ -40,6 +40,7 @@ CREATE TABLE Posts_by_author (
   createdAt timestamp,
   authorId uuid,
   authorName varchar,
+  categoryName varchar,
   PRIMARY KEY ((authorId), createdAt, postId)
 )
   WITH CLUSTERING ORDER BY (createdAt DESC);

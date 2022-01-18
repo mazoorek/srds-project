@@ -60,6 +60,7 @@ public class BackendSession {
 	private static PreparedStatement SELECT_ALL_POSTS_BY_CATEGORY;
 	private static PreparedStatement SELECT_NEWEST_POSTS_BY_CATEGORY;
 	private static PreparedStatement SELECT_ALL_POSTS_BY_AUTHOR;
+	private static PreparedStatement SELECT_ALL_POSTS;
 	private static PreparedStatement SELECT_NEWEST_POSTS_BY_AUTHOR;
 	private static PreparedStatement DELETE_POST_BY_AUTHOR;
 	private static PreparedStatement DELETE_POST_BY_CATEGORY;
@@ -78,6 +79,7 @@ public class BackendSession {
 	private static PreparedStatement UPDATE_COMMENT_BY_AUTHOR;
 
 	private static PreparedStatement SELECT_POSTS_LIKED_BY_USER;
+	private static PreparedStatement SELECT_POST_LIKED_BY_USER;
 	private static PreparedStatement CREATE_LIKED_POST_BY_USER;
 	private static PreparedStatement DELETE_LIKED_POST_BY_USER;
 
@@ -110,12 +112,13 @@ public class BackendSession {
 			SELECT_ALL_POSTS_BY_CATEGORY = session.prepare("SELECT * from posts_by_category where categoryName = (?)");
 			SELECT_NEWEST_POSTS_BY_CATEGORY = session.prepare("SELECT * from posts_by_category where categoryName = (?) LIMIT 10");
 			SELECT_ALL_POSTS_BY_AUTHOR = session.prepare("SELECT * from posts_by_author where authorId = (?)").setConsistencyLevel(QUORUM);
+			SELECT_ALL_POSTS = session.prepare("SELECT * from posts_by_author");
 			SELECT_NEWEST_POSTS_BY_AUTHOR = session.prepare("SELECT * from posts_by_author where authorId = (?) LIMIT 10");
 			SELECT_CONCRETE_POST_BY_CATEGORY = session.prepare("SELECT * FROM posts_by_category where categoryName = (?) and createdAt = (?) and postId = (?)");
 			SELECT_CONCRETE_POST_BY_AUTHOR = session.prepare("SELECT * FROM posts_by_author where authorId = (?) and createdAt = (?) and postId = (?)").setConsistencyLevel(QUORUM);
 
 			CREATE_NEW_USER = session.prepare("INSERT INTO users (userId, name, password, email, age) VALUES (?, ?, ?, ?, ?)");
-			CREATE_NEW_POST_AUTHOR = session.prepare("INSERT INTO Posts_by_author (postId, postContent, createdAt, authorId, authorName) VALUES (?, ?, ?, ?, ?)").setConsistencyLevel(QUORUM);
+			CREATE_NEW_POST_AUTHOR = session.prepare("INSERT INTO Posts_by_author (postId, postContent, createdAt, authorId, authorName, categoryName) VALUES (?, ?, ?, ?, ?, ?)").setConsistencyLevel(QUORUM);
 			CREATE_NEW_POST_CATEGORY = session.prepare("INSERT INTO Posts_by_category (categoryName, postId, postContent, createdAt, authorId, authorName) VALUES (?, ?, ?, ?, ?, ?)").setConsistencyLevel(QUORUM);
 
 			DELETE_POST_BY_CATEGORY = session.prepare("DELETE FROM posts_by_category where categoryName = (?) and createdAt = (?) and postId = (?)");
@@ -137,6 +140,7 @@ public class BackendSession {
 			UPDATE_COMMENT_BY_AUTHOR = session.prepare("UPDATE comments_by_author set commentContent = (?) where authorId = (?) and createdAt = (?) and commentId = (?)");
 
 			SELECT_POSTS_LIKED_BY_USER = session.prepare("SELECT * FROM liked_post_by_user where userId = (?)");
+			SELECT_POST_LIKED_BY_USER = session.prepare("SELECT * FROM liked_post_by_user where userId = (?) and postId = (?)");
 			CREATE_LIKED_POST_BY_USER = session.prepare("INSERT INTO liked_post_by_user (postId, userId) VALUES (?, ?)").setConsistencyLevel(ONE);
 			DELETE_LIKED_POST_BY_USER = session.prepare("DELETE FROM liked_post_by_user where userId = (?) and postId = (?)");
 
@@ -183,8 +187,7 @@ public class BackendSession {
 	}
 
 
-	public String selectAllPostsByCategory(String categoryName) throws BackendException {
-		StringBuilder builder = new StringBuilder();
+	public List<Row> selectAllPostsByCategory(String categoryName) throws BackendException {
 		BoundStatement bs = new BoundStatement(SELECT_ALL_POSTS_BY_CATEGORY);
 		bs.bind(categoryName);
 
@@ -195,14 +198,10 @@ public class BackendSession {
 		} catch (Exception e) {
 			throw new BackendException("Could not perform a query: select all posts. " + e.getMessage() + ".", e);
 		}
-
-		showPostsByCategory(rs, builder);
-
-		return builder.toString();
+		return rs.all();
 	}
 
 	public List<Row> selectAllPostsByAuthor(UUID authorId) throws BackendException {
-//		StringBuilder builder = new StringBuilder();
 		BoundStatement bs = new BoundStatement(SELECT_ALL_POSTS_BY_AUTHOR);
 		bs.bind(authorId);
 
@@ -213,10 +212,11 @@ public class BackendSession {
 		} catch (Exception e) {
 			throw new BackendException("Could not perform a query: select all posts. " + e.getMessage() + ".", e);
 		}
-
-//		showPostsByAuthor(rs, builder);
-
 		return rs.all();
+	}
+
+	public List<String> selectAllPostIdsByAuthor(UUID authorId) throws BackendException {
+		return selectAllPostsByAuthor(authorId).stream().map(post -> post.getString("postId")).collect(Collectors.toList());
 	}
 
 	public String selectNewestPostsByAuthor(UUID authorId) throws BackendException {
@@ -321,7 +321,7 @@ public class BackendSession {
 
 	public void createNewPost(UUID postId, UUID authorId, String postContent, Timestamp createdAt, String authorName, String categoryName) throws BackendException {
 		BoundStatement bs1 = new BoundStatement(CREATE_NEW_POST_AUTHOR);
-		bs1.bind(postId, postContent, createdAt, authorId, authorName);
+		bs1.bind(postId, postContent, createdAt, authorId, authorName, categoryName);
 
 		BoundStatement bs2 = new BoundStatement(CREATE_NEW_POST_CATEGORY);
 		bs2.bind(categoryName, postId, postContent, new Date(), authorId, authorName);
@@ -394,6 +394,17 @@ public class BackendSession {
 		return rs.all();
 	}
 
+	public List<Row> selectPosts() throws BackendException {
+		BoundStatement bs = new BoundStatement(SELECT_ALL_POSTS);
+		ResultSet rs = null;
+		try {
+			rs = session.execute(bs);
+		} catch (Exception e) {
+			throw new BackendException("Could not perform a query: select all comments by author. " + e.getMessage() + ".", e);
+		}
+		return rs.all();
+	}
+
 	public void deleteComment(UUID postId, Timestamp createdAt, UUID commentId, UUID authorId) throws BackendException {
 		BoundStatement deleteCommentByPost = new BoundStatement(DELETE_COMMENT_BY_POST);
 		BoundStatement deleteCommentByAuthor = new BoundStatement(DELETE_COMMENT_BY_AUTHOR);
@@ -440,6 +451,21 @@ public class BackendSession {
 		}
 
 		return rs.all().stream().map(row -> row.getUUID("postId")).collect(Collectors.toList());
+	}
+
+	public boolean userLikedPost(UUID userId, UUID postId) throws BackendException {
+		StringBuilder builder = new StringBuilder();
+		BoundStatement bs = new BoundStatement(SELECT_POST_LIKED_BY_USER);
+		bs.bind(userId, postId);
+		ResultSet rs = null;
+
+		try {
+			rs = session.execute(bs);
+		} catch (Exception e) {
+			throw new BackendException("Could not perform a query: select posts liked by user. " + e.getMessage() + ".", e);
+		}
+
+		return rs.all().size() != 0;
 	}
 
 	public void createLikedPostByUser(UUID postId, UUID userId) throws BackendException {

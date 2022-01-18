@@ -14,3 +14,5 @@ cassdemo/scenarios/SecondScenario.java
  cassdemo.scenarios.SecondScenario
 cassdemo/Main.java
  cassdemo.Main
+cassdemo/scenarios/FifthScenario.java
+ cassdemo.scenarios.FifthScenario
